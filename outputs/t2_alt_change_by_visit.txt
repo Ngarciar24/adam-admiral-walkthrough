@@ -1,0 +1,78 @@
+Table 2. Alanine Aminotransferase (U/L): Observed Value and Change from Baseline by Visit
+Safety Population (SAFFL = 'Y'); PARAMCD = 'ALT'
+Unscheduled visits excluded
+
+——————————————————————————————————————————————————————————————————————————
+                      Placebo   Xanomeline Low Dose   Xanomeline High Dose
+                      (N=86)          (N=84)                 (N=84)       
+——————————————————————————————————————————————————————————————————————————
+AVISIT                                                                    
+  SCREENING 1                                                             
+    n                   86              82                     84         
+    Mean BASE          17.5            17.9                   19.1        
+    Mean AVAL          17.6            18.0                   19.2        
+    Mean CHG            0.1             0.1                   0.1         
+  WEEK 2                                                                  
+    n                   83              80                     78         
+    Mean BASE          17.7            18.1                   19.2        
+    Mean AVAL          18.0            20.9                   21.0        
+    Mean CHG            0.3             2.8                   1.7         
+  WEEK 4                                                                  
+    n                   79              72                     72         
+    Mean BASE          17.9            18.2                   19.1        
+    Mean AVAL          18.7            17.5                   21.3        
+    Mean CHG            0.8            -0.6                   2.2         
+  AMBUL ECG REMOVAL                                                       
+    n                    0               1                     0          
+    Mean BASE           NA             19.0                    NA         
+    Mean AVAL           NA             15.0                    NA         
+    Mean CHG            NA             -4.0                    NA         
+  WEEK 6                                                                  
+    n                   73              62                     66         
+    Mean BASE          17.3            18.1                   19.5        
+    Mean AVAL          17.0            17.0                   21.2        
+    Mean CHG           -0.4            -1.1                   1.7         
+  WEEK 8                                                                  
+    n                   72              60                     56         
+    Mean BASE          17.7            17.6                   19.4        
+    Mean AVAL          16.7            17.6                   22.8        
+    Mean CHG           -1.0             0.0                   3.3         
+  WEEK 12                                                                 
+    n                   67              51                     50         
+    Mean BASE          17.8            18.1                   20.1        
+    Mean AVAL          18.0            18.5                   21.0        
+    Mean CHG            0.2             0.4                   0.9         
+  WEEK 16                                                                 
+    n                   68              42                     37         
+    Mean BASE          17.7            16.6                   19.6        
+    Mean AVAL          17.1            17.3                   19.6        
+    Mean CHG           -0.6             0.7                   -0.0        
+  WEEK 20                                                                 
+    n                   65              30                     31         
+    Mean BASE          17.8            15.6                   19.8        
+    Mean AVAL          16.1            16.7                   19.6        
+    Mean CHG           -1.8             1.1                   -0.3        
+  WEEK 24                                                                 
+    n                   57              26                     30         
+    Mean BASE          18.0            16.4                   20.7        
+    Mean AVAL          17.9            18.2                   21.0        
+    Mean CHG           -0.1             1.8                   0.3         
+  WEEK 26                                                                 
+    n                   57              25                     27         
+    Mean BASE          17.9            16.2                   20.8        
+    Mean AVAL          16.0            17.8                   18.9        
+    Mean CHG           -1.8             1.6                   -1.9        
+  RETRIEVAL                                                               
+    n                    0               1                     0          
+    Mean BASE           NA             23.0                    NA         
+    Mean AVAL           NA             13.0                    NA         
+    Mean CHG            NA             -10.0                   NA         
+——————————————————————————————————————————————————————————————————————————
+
+BASE = value at the ABLFL='Y' record; CHG = AVAL - BASE, both taken directly from ADLB.
+n = records with a non-missing CHG. Mean AVAL may be based on more records than Mean CHG
+when a subject has a post-baseline value but no baseline.
+Column N = subjects contributing at least one ALT record, NOT the number of records.
+Visit order follows AVISITN. Visits with a single record are retained as collected.
+
+Program: programs/91_tables.R | Source: data/adam/adlb.rds (no derivation performed in this program)

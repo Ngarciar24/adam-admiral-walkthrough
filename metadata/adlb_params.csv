@@ -1,0 +1,6 @@
+LBTESTCD,PARAMCD,PARAM,PARAMN,PARCAT1
+ALT,ALT,Alanine Aminotransferase (U/L),1,CHEMISTRY
+AST,AST,Aspartate Aminotransferase (U/L),2,CHEMISTRY
+BILI,BILI,Bilirubin (umol/L),3,CHEMISTRY
+CREAT,CREAT,Creatinine (umol/L),4,CHEMISTRY
+HGB,HGB,Hemoglobin (mmol/L),5,HEMATOLOGY

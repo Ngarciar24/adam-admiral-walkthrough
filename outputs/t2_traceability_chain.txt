@@ -1,0 +1,32 @@
+TRACEABILITY CHAIN -- one cell of Table 2, followed back to SDTM
+================================================================
+
+CELL      Table 2, row block 'WEEK 8', row 'Mean CHG', column 'Xanomeline High Dose'
+          printed value = 3.3, computed from n = 56 non-missing CHG values
+
+ONE CONTRIBUTING RECORD
+  ADaM  ADLB  USUBJID = 01-701-1028   ASEQ = 5        (USUBJID + ASEQ is the unique key)
+              PARAMCD = ALT   PARAM = Alanine Aminotransferase (U/L)
+              AVISIT  = WEEK 8   AVISITN = 8   ADT = 2013-09-10
+              TRT01P  = Xanomeline High Dose   SAFFL = Y
+              AVAL    = 33   BASE = 26   CHG = 7   (CHG = AVAL - BASE = 33 - 26)
+
+  BASE came from this subject's baseline record in the SAME dataset:
+        ADLB  USUBJID = 01-701-1028   ASEQ = 1   ABLFL = Y   AVISIT = SCREENING 1   AVAL = 26
+              that AVAL (26) is the BASE carried onto every ALT row of this subject.
+
+  SDTM  LB    USUBJID = 01-701-1028   LBSEQ = 135       (LBSEQ kept in ADLB for this hop)
+              LBTESTCD = ALT   LBTEST = Alanine Aminotransferase
+              VISIT    = WEEK 8   LBDTC = 2013-09-10T09:13
+              LBORRES  = 33 U/L    (as reported by the local lab)
+              LBSTRESN = 33 U/L    (standardised -- this is what AVAL copies)
+              LBBLFL   = <NA>
+
+SO:
+  LB.LBSTRESN = 33  ->  ADLB.AVAL = 33  (origin: Predecessor, LB.LBSTRESN)
+  ADLB.BASE   = 26     (origin: Derived, AVAL where ABLFL='Y')
+  ADLB.CHG    = 7     (origin: Derived, AVAL - BASE)
+  -> one of the 56 values averaged into Table 2 / WEEK 8 / Mean CHG / Xanomeline High Dose
+
+No step in 91_tables.R altered any of these values; the program filtered and
+averaged existing columns. That is the ADaM 'analysis-ready' contract.

@@ -1,0 +1,34 @@
+Table 1. Demographics and Baseline Characteristics
+Intent-to-Treat Population (ITTFL = 'Y')
+
+—————————————————————————————————————————————————————————————————————————————————————————————
+                                       Placebo     Xanomeline Low Dose   Xanomeline High Dose
+                                       (N=86)            (N=84)                 (N=84)       
+—————————————————————————————————————————————————————————————————————————————————————————————
+Age (years)                                                                                  
+  n                                      86                84                     84         
+  Mean (SD)                          75.2 (8.6)        75.7 (8.3)             74.4 (7.9)     
+  Median                                76.0              77.5                   76.0        
+  Min - Max                          52.0 - 89.0       51.0 - 88.0           56.0 - 88.0     
+Age group                                                                                    
+  n                                      86                84                     84         
+  <65                                14 (16.3%)         8 (9.5%)              11 (13.1%)     
+  65-80                              42 (48.8%)         47 (56%)              55 (65.5%)     
+  >80                                30 (34.9%)        29 (34.5%)             18 (21.4%)     
+Sex                                                                                          
+  n                                      86                84                     84         
+  F                                  53 (61.6%)        50 (59.5%)             40 (47.6%)     
+  M                                  33 (38.4%)        34 (40.5%)             44 (52.4%)     
+Race                                                                                         
+  n                                      86                84                     84         
+  AMERICAN INDIAN OR ALASKA NATIVE        0                 0                  1 (1.2%)      
+  ASIAN                                   0                 0                     0          
+  BLACK OR AFRICAN AMERICAN           8 (9.3%)          6 (7.1%)              9 (10.7%)      
+  WHITE                              78 (90.7%)        78 (92.9%)             74 (88.1%)     
+—————————————————————————————————————————————————————————————————————————————————————————————
+
+Percentages use the number of subjects with a non-missing value in the arm (the 'n' row)
+as denominator. No demographic value is missing here, so n equals the column N.
+Source: ADSL. Planned treatment (TRT01P) -- ITT is analysed as randomised.
+
+Program: programs/91_tables.R | admiral 1.5.0 | rtables 0.6.16 | tern 0.9.11

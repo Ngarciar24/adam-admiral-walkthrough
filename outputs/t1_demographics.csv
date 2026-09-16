@@ -1,0 +1,17 @@
+avar_name,row_name,label_name,row_num,is_group_summary,node_class,Placebo,Xanomeline Low Dose,Xanomeline High Dose
+AGE,n,n,2,FALSE,DataRow,86,84,84
+AGE,mean_sd,Mean (SD),3,FALSE,DataRow,75.2 (8.6),75.7 (8.3),74.4 (7.9)
+AGE,median,Median,4,FALSE,DataRow,76.0,77.5,76.0
+AGE,range,Min - Max,5,FALSE,DataRow,52.0 - 89.0,51.0 - 88.0,56.0 - 88.0
+AGEGR1,n,n,7,FALSE,DataRow,86,84,84
+AGEGR1,count_fraction.<65,<65,8,FALSE,DataRow,14 (16.3%),8 (9.5%),11 (13.1%)
+AGEGR1,count_fraction.65-80,65-80,9,FALSE,DataRow,42 (48.8%),47 (56%),55 (65.5%)
+AGEGR1,count_fraction.>80,>80,10,FALSE,DataRow,30 (34.9%),29 (34.5%),18 (21.4%)
+SEX,n,n,12,FALSE,DataRow,86,84,84
+SEX,count_fraction.F,F,13,FALSE,DataRow,53 (61.6%),50 (59.5%),40 (47.6%)
+SEX,count_fraction.M,M,14,FALSE,DataRow,33 (38.4%),34 (40.5%),44 (52.4%)
+RACE,n,n,16,FALSE,DataRow,86,84,84
+RACE,count_fraction.AMERICAN INDIAN OR ALASKA NATIVE,AMERICAN INDIAN OR ALASKA NATIVE,17,FALSE,DataRow,0,0,1 (1.2%)
+RACE,count_fraction.ASIAN,ASIAN,18,FALSE,DataRow,0,0,0
+RACE,count_fraction.BLACK OR AFRICAN AMERICAN,BLACK OR AFRICAN AMERICAN,19,FALSE,DataRow,8 (9.3%),6 (7.1%),9 (10.7%)
+RACE,count_fraction.WHITE,WHITE,20,FALSE,DataRow,78 (90.7%),78 (92.9%),74 (88.1%)

@@ -1,0 +1,23 @@
+# renv
+renv/library/
+renv/local/
+renv/cellar/
+renv/lock/
+renv/python/
+renv/sandbox/
+renv/staging/
+# R
+.Rhistory
+.RData
+.Rproj.user/
+# derived data (reproducible from run_all.R)
+data/adam/*.rds
+
+# ...but NOT the SAS transport files. data/adam/*.xpt is the submission
+# artifact -- the thing that would actually be shipped to the agency -- so it is
+# committed, and a reader can inspect it with haven::read_xpt() or a SAS viewer
+# without installing R or re-running anything. The negation is written out
+# explicitly (rather than relying on *.rds simply not matching *.xpt) so that a
+# broader ignore rule added to this file later cannot silently start excluding
+# the deliverable.
+!data/adam/*.xpt
