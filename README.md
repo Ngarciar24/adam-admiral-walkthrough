@@ -1,5 +1,7 @@
 # adam-admiral-walkthrough
 
+[![build-and-test](https://github.com/Ngarciar24/adam-admiral-walkthrough/actions/workflows/tests.yml/badge.svg)](https://github.com/Ngarciar24/adam-admiral-walkthrough/actions/workflows/tests.yml)
+
 ADaM datasets built with [{admiral}](https://pharmaverse.github.io/admiral/) from the public CDISC pilot study data in `{pharmaversesdtm}`.
 
 I built this to learn the CDISC standards hands-on. It uses public test data only.
@@ -9,9 +11,10 @@ I built this to learn the CDISC standards hands-on. It uses public test data onl
 - Builds **ADSL** (306 subjects), **ADLB** (BDS, five lab parameters) and **ADAE** (OCCDS) from SDTM.
 - Derives treatment dates, population flags, baseline flags, change from baseline, reference-range indicators and treatment-emergent flags.
 - Runs 163 `testthat` checks on the derivations, including unit tests of the baseline rule on hand-built data.
-- Exports ADSL and ADLB to SAS Transport (`.xpt`) with `{xportr}`, driven by a CSV specification.
-- Produces a demographics table and a change-from-baseline table with `{rtables}` and `{tern}`.
-- Re-checks the `.xpt` export independently with a short pandas script.
+- Exports ADSL, ADLB and ADAE to SAS Transport (`.xpt`) with `{xportr}`, driven by a CSV specification, and verifies each file by reading it back against the spec.
+- Produces a demographics table and a change-from-baseline table with `{rtables}` and `{tern}`, and a change-from-baseline figure with `{ggplot2}` that is checked cell by cell against the table.
+- Re-checks the `.xpt` exports independently in Python: pandas re-derives the treatment-emergent flag from the dates in the file and must agree with admiral on every row.
+- Rebuilds everything from scratch in GitHub Actions on every push, in a pinned `{renv}` environment.
 
 ## Run it
 
@@ -20,7 +23,11 @@ renv::restore()
 source("run_all.R")
 ```
 
-`run_all.R` rebuilds every dataset, writes the tables and runs the tests. Output is identical across rebuilds.
+```sh
+python3 python/check_adlb.py   # needs pandas
+```
+
+`run_all.R` rebuilds every dataset, exports the `.xpt` files, writes the tables and the figure, and runs the tests. Output is identical across rebuilds. The GitHub Actions workflow runs both commands.
 
 ## Layout
 
@@ -29,13 +36,16 @@ programs/00_setup.R          load SDTM, blanks to NA, read metadata
 programs/01_adsl.R           ADSL
 programs/02_adlb.R           ADLB (BDS)
 programs/03_adae.R           ADAE (OCCDS)
-programs/90_export_xpt.R     XPT export
+programs/90_export_xpt.R     XPT export, spec coverage and round-trip checks
 programs/91_tables.R         tables
+programs/92_figures.R        figure
+R/derive_ablfl.R             the baseline rule, shared by the program and its tests
 metadata/                    dataset specification (CSV)
 tests/testthat/              tests
-outputs/                     tables and a printed traceability trace
-python/check_adlb.py         pandas re-check of the export
-.github/workflows/tests.yml  CI (runs on first push)
+outputs/                     tables, figure and a printed traceability trace
+data/adam/                   adsl.xpt, adlb.xpt, adae.xpt
+python/check_adlb.py         pandas re-check of the exports
+.github/workflows/tests.yml  CI
 ```
 
 ## Results
@@ -67,6 +77,10 @@ AVISIT
     Mean CHG            0.3             2.8                   1.7
 ```
 
+The same rows, drawn (`outputs/f1_alt_chg_by_visit.png`). The program that draws it stops if any plotted mean differs from the table cell:
+
+![Mean change from baseline in ALT by visit and treatment arm](outputs/f1_alt_chg_by_visit.png)
+
 The full tables, the `.xpt` files and a printed traceability trace are in `outputs/` and `data/adam/`.
 
 ## Traceability
@@ -91,10 +105,11 @@ There is no protocol or analysis plan for the pilot data, so these are my decisi
 - `TRTEMFL`: onset on or after first dose.
 - `CHG` is populated on every row, including pre-baseline rows.
 - Unscheduled visits are grouped under one `AVISIT`; no visit windows.
+- Figure 1 draws only visits with at least 10 subjects in every arm; Table 2 keeps every scheduled visit.
 
 ## Scope
 
-Self-directed learning project, done in one day, on public test data. Not study work, not validated, no define.xml, no conformance run. Real study data would add partial dates, visit windows, multiple treatment periods and a define.xml; none of that is exercised here.
+Self-directed learning project on public test data. Not study work, not validated, no define.xml, no conformance run. Real study data would add partial dates, visit windows, multiple treatment periods and a define.xml; none of that is exercised here.
 
 ## Licence
 

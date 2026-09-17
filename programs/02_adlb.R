@@ -22,6 +22,7 @@
 # ---------------------------------------------------------------------------
 
 source("programs/00_setup.R")
+source("R/derive_ablfl.R")
 
 adsl <- readRDS(file.path(adam_dir, "adsl.rds"))
 
@@ -155,20 +156,11 @@ adlb <- lb %>%
   # consider baseline" while ABLFL answers "which record does THIS analysis use
   # as baseline". They are compared in tests/testthat/test-adlb.R; they do not
   # have to agree, and where they disagree the SAP wins.
-  restrict_derivation(
-    derivation = derive_var_extreme_flag,
-    args = params(
-      by_vars = exprs(STUDYID, USUBJID, PARAMCD),
-      order   = exprs(ADT, LBSEQ),
-      new_var = ABLFL,
-      mode    = "last"
-    ),
-    filter = !is.na(AVAL) & ADT <= TRTSDT
-  ) %>%
-
-  # ===========================================================================
-  # 5. Baseline value and change from baseline
-  # ===========================================================================
+  # The two calls that implement this rule -- restrict_derivation() around
+  # derive_var_extreme_flag(), then derive_var_base() -- live in
+  # R/derive_ablfl.R so the unit tests in tests/testthat/test-adlb.R exercise
+  # exactly the code this program runs, rather than a copy of it.
+  #
   # BASE copies the AVAL of the ABLFL == "Y" record onto EVERY row of that
   # subject/parameter, including the baseline row itself and the pre-baseline
   # rows. That denormalisation is the point of BDS: a change-from-baseline table
@@ -179,12 +171,11 @@ adlb <- lb %>%
   # which fails silently (returns NA, or errors on length 0) when a subject has
   # no baseline record. derive_var_base() makes the filter explicit and leaves
   # BASE as NA for those subjects, which is the correct, inspectable outcome.
-  derive_var_base(
-    by_vars    = exprs(STUDYID, USUBJID, PARAMCD),
-    source_var = AVAL,
-    new_var    = BASE
-  ) %>%
+  derive_ablfl_base() %>%
 
+  # ===========================================================================
+  # 5. Change from baseline
+  # ===========================================================================
   # CHG = AVAL - BASE, PCHG = 100 * (AVAL - BASE) / BASE.
   # Both take no arguments: admiral fixes the variable names by ADaM convention.
   # WHERE CHG IS POPULATED -- the part most likely to be probed:

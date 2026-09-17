@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# 90_export_xpt.R -- write ADSL and ADLB as SAS Transport v5 (.xpt)
+# 90_export_xpt.R -- write ADSL, ADLB and ADAE as SAS Transport v5 (.xpt)
 #
 # WHY XPT v5 AT ALL
 # -----------------
@@ -75,15 +75,12 @@
 #
 # Source ADaM: data/adam/adsl.rds, data/adam/adlb.rds.
 #
-# SCOPE: this program exports ADSL and ADLB only. ADAE is built by 03_adae.R
-# and is NOT exported here, because it has no rows in metadata/adam_spec.csv.
-# Say that plainly rather than letting it look like an oversight: a real
-# submission package would contain adae.xpt too, so this is a gap in coverage,
-# not a design decision. Nothing in the code below is specific to ADSL/ADLB --
-# adding ADAE means appending its variable rows to metadata/adam_spec.csv and
-# one row to metadata/adam_datasets.csv, then calling export_xpt() and
-# verify_round_trip() once more. A dataset absent from the spec is never
-# touched at all; there is no path here that half-exports one.
+# SCOPE: all three datasets built by programs/01-03 are exported. ADAE was
+# added after ADSL and ADLB: appending its variable rows to
+# metadata/adam_spec.csv and one row to metadata/adam_datasets.csv was the
+# whole change, plus one more call to each of the functions below. Nothing in
+# the code is specific to any one dataset; a dataset absent from the spec is
+# never touched at all, so there is no path here that half-exports one.
 # ---------------------------------------------------------------------------
 
 source("programs/00_setup.R")
@@ -93,6 +90,7 @@ library(haven)
 
 adsl <- readRDS(file.path(adam_dir, "adsl.rds"))
 adlb <- readRDS(file.path(adam_dir, "adlb.rds"))
+adae <- readRDS(file.path(adam_dir, "adae.rds"))
 
 spec_path    <- "metadata/adam_spec.csv"
 dsspec_path  <- "metadata/adam_datasets.csv"
@@ -145,7 +143,8 @@ dsspec_path  <- "metadata/adam_datasets.csv"
 # metadata/adam_spec.csv aside, let this program regenerate the draft, and diff
 # the draft against the committed file: that diff IS the hand work, and re-doing
 # it is how to refresh the counts below whenever a variable is added. Against
-# the spec as committed here (88 variable rows across ADSL and ADLB):
+# the spec as first committed (88 variable rows across ADSL and ADLB; the 37
+# ADAE rows were added later by the same draft-then-curate route):
 #   * 59 label cells were EMPTY in the draft and had to be written in -- one for
 #     every derived variable, because admiral attaches no label attribute;
 #   * 2 labels were non-empty but WRONG, inherited from whichever SDTM variable
@@ -201,7 +200,8 @@ if (!file.exists(spec_path)) {
   message("metadata/adam_spec.csv not found -- writing a FIRST DRAFT from the data. ",
           "Labels must now be curated by hand before this is a real spec.")
   write_csv(
-    rbind(build_spec_draft(adsl, "ADSL"), build_spec_draft(adlb, "ADLB")),
+    rbind(build_spec_draft(adsl, "ADSL"), build_spec_draft(adlb, "ADLB"),
+          build_spec_draft(adae, "ADAE")),
     spec_path,
     na = ""
   )
@@ -274,6 +274,7 @@ check_spec_covers <- function(d, dataset_name) {
 }
 check_spec_covers(adsl, "ADSL")
 check_spec_covers(adlb, "ADLB")
+check_spec_covers(adae, "ADAE")
 
 # ===========================================================================
 # 3. Re-derive the XPT v5 constraints from the actual data
@@ -343,6 +344,7 @@ audit_xpt_constraints <- function(d, dataset_name) {
 }
 audit_xpt_constraints(adsl, "ADSL")
 audit_xpt_constraints(adlb, "ADLB")
+audit_xpt_constraints(adae, "ADAE")
 
 # ===========================================================================
 # 4. Write the transport files
@@ -426,6 +428,7 @@ export_xpt <- function(d, dataset_name) {
 
 adsl_xpt <- export_xpt(adsl, "ADSL")
 adlb_xpt <- export_xpt(adlb, "ADLB")
+adae_xpt <- export_xpt(adae, "ADAE")
 
 # ===========================================================================
 # 5. Round trip
@@ -603,5 +606,6 @@ verify_round_trip <- function(original, path, dataset_name) {
 
 verify_round_trip(adsl, adsl_xpt, "ADSL")
 verify_round_trip(adlb, adlb_xpt, "ADLB")
+verify_round_trip(adae, adae_xpt, "ADAE")
 
-message("\nXPT export complete: ", adsl_xpt, ", ", adlb_xpt)
+message("\nXPT export complete: ", adsl_xpt, ", ", adlb_xpt, ", ", adae_xpt)

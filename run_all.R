@@ -20,7 +20,8 @@ core <- c(
 # Stretch programs: exports and tables. Skipped silently if not present.
 stretch <- c(
   "programs/90_export_xpt.R",
-  "programs/91_tables.R"
+  "programs/91_tables.R",
+  "programs/92_figures.R"
 )
 
 run_one <- function(path) {

@@ -1,7 +1,7 @@
-# Rebuild every ADaM dataset from SDTM and run the test suite on each push.
-# NOTE: this workflow was written but has NOT yet been executed -- the first run
-# happens on the first push. If it fails on a missing system library, the fix
-# is almost always one more package in the apt-get line below.
+# Rebuild every ADaM dataset from SDTM, export the XPT files, draw the figure,
+# run the R test suite, then re-check the exports from Python. If a run fails on
+# a missing system library, the fix is almost always one more package in the
+# apt-get line below.
 name: build-and-test
 
 on:
@@ -34,3 +34,12 @@ jobs:
 
       - name: Rebuild datasets and run tests
         run: Rscript run_all.R
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cross-check the XPT exports from Python
+        run: |
+          pip install pandas
+          python3 python/check_adlb.py

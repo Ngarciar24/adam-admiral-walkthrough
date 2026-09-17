@@ -21,8 +21,7 @@
 # in a real study, and they are usually NOT exercised by the study data you
 # happen to have in front of you.
 #
-# Run with:
-#   cd /home/ngr24/projects/adam-admiral-walkthrough
+# Run from the project root with:
 #   Rscript -e 'testthat::test_file("tests/testthat/test-adlb.R")'
 # ---------------------------------------------------------------------------
 
@@ -410,32 +409,11 @@ test_that("ABLFL and SDTM LBBLFL disagree in the expected, explainable way", {
 # eye. That is the point: the assertions are derived from the SAP sentence, not
 # from the output of the program.
 #
-# HONEST LIMITATION, stated rather than hidden: the helper below is a COPY of
-# the restrict_derivation() / derive_var_extreme_flag() / derive_var_base()
-# calls in programs/02_adlb.R, not a shared function that both call. So these
-# tests can drift from the program. The correct fix in a real repository is to
-# lift the derivation into R/derive_ablfl.R and have both the program and this
-# file source it; that refactor is deliberately not done here because
-# 02_adlb.R is meant to be read top-to-bottom as a teaching program with the
-# derivation visible inline.
-derive_ablfl_base <- function(dat) {
-  dat %>%
-    restrict_derivation(
-      derivation = derive_var_extreme_flag,
-      args = params(
-        by_vars = exprs(STUDYID, USUBJID, PARAMCD),
-        order   = exprs(ADT, LBSEQ),
-        new_var = ABLFL,
-        mode    = "last"
-      ),
-      filter = !is.na(AVAL) & ADT <= TRTSDT
-    ) %>%
-    derive_var_base(
-      by_vars    = exprs(STUDYID, USUBJID, PARAMCD),
-      source_var = AVAL,
-      new_var    = BASE
-    )
-}
+# The helper under test is the SAME function programs/02_adlb.R calls,
+# sourced from R/derive_ablfl.R. An earlier version of this file carried a
+# hand-copied version of the two admiral calls; that copy could drift from
+# the program without any test noticing, so it was lifted into one file.
+source(proj_file("R/derive_ablfl.R"))
 
 # First dose is 2013-01-10 for every subject in the fixture, so "pre-dose" can
 # be read straight off the dates below.
