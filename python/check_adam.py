@@ -2,9 +2,10 @@
 Independent cross-language check of the ADaM exports, reading the SAS
 Transport files with pandas.
 
-Why this exists: the target role migrates SAS -> R and Python. The .xpt files
-are language-neutral, so a second language can re-verify the R derivations by a
-different door -- pandas here, nothing from the R side is imported.
+Why this exists: work in this area is migrating from SAS to R and Python. The
+.xpt files are language-neutral, so a second language can re-verify the R
+derivations by a different door -- pandas here, nothing from the R side is
+imported.
 
 Two kinds of check: structural invariants of ADLB, and an independent
 re-derivation of the ADAE treatment-emergent flag from the dates carried in the
@@ -12,7 +13,7 @@ file. The second is the double-programming idea: the rule is written again in
 another language, from its SAP wording, and the two implementations must agree
 row for row.
 
-Run from the project root:  python3 python/check_adlb.py
+Run from the project root:  python3 python/check_adam.py
 Requires only pandas (pd.read_sas handles XPT v5 natively).
 """
 from pathlib import Path

@@ -24,7 +24,7 @@ source("run_all.R")
 ```
 
 ```sh
-python3 python/check_adlb.py   # needs pandas
+python3 python/check_adam.py   # needs pandas
 ```
 
 `run_all.R` rebuilds every dataset, exports the `.xpt` files, writes the tables and the figure, and runs the tests. Output is identical across rebuilds. The GitHub Actions workflow runs both commands.
@@ -44,7 +44,7 @@ metadata/                    dataset specification (CSV)
 tests/testthat/              tests
 outputs/                     tables, figure and a printed traceability trace
 data/adam/                   adsl.xpt, adlb.xpt, adae.xpt
-python/check_adlb.py         pandas re-check of the exports
+python/check_adam.py         pandas re-check of the exports
 .github/workflows/tests.yml  CI
 ```
 

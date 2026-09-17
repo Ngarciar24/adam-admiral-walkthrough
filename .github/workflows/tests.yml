@@ -42,4 +42,4 @@ jobs:
       - name: Cross-check the XPT exports from Python
         run: |
           pip install pandas
-          python3 python/check_adlb.py
+          python3 python/check_adam.py
