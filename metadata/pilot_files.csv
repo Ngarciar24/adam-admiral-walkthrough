@@ -1,0 +1,8 @@
+name,path,sha256,use
+sdtm_qs,data/sdtm/cdiscpilot01/qs.xpt,a1a68fbebbceb6237a8fba0f96b6b9ab8d476817200cde5a0b625966ac23cd6e,Source: SDTM QS (ADAS-Cog and CIBIC+) for ADQSADAS and EFFFL
+ref_adsl,data/adam/cdiscpilot01/adsl.xpt,c5139f873a93ef6add77bc4297beb6460a398bbdd036874382a9f39dfc92091d,Reference: published pilot ADSL
+ref_adae,data/adam/cdiscpilot01/adae.xpt,b8678e70946473a753bb01d002917f478bf51b59bdd0dc19587b97128059b6a0,Reference: published pilot ADAE
+ref_adlbc,data/adam/cdiscpilot01/adlbc.xpt,b9f6b5106965b5e2e3b33062a18710b58ceecc0c8cf1e54271849653037998ea,Reference: published pilot ADLBC (chemistry)
+ref_adlbh,data/adam/cdiscpilot01/adlbh.xpt,de568850f5585266844abe6eb7ef0290ea130d90c3f023efcb9f13c2a586455b,Reference: published pilot ADLBH (haematology)
+ref_adtte,data/adam/cdiscpilot01/adtte.xpt,68513fc4126744b6b2c7328eb70eb7b9683865d12c58b36539325f3c0c0ab93d,Reference: published pilot ADTTE
+ref_adqsadas,data/adam/cdiscpilot01/adqsadas.xpt,ac3fa1217651810b0f15fe489fdda7d99eff10553ded025156ad7c1b89f84608,Reference: published pilot ADQSADAS

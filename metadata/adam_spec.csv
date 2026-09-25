@@ -1,126 +1,203 @@
-dataset,variable,label,type,length,order,format
-ADSL,STUDYID,Study Identifier,character,12,1,
-ADSL,USUBJID,Unique Subject Identifier,character,11,2,
-ADSL,SUBJID,Subject Identifier for the Study,character,4,3,
-ADSL,RFSTDTC,Subject Reference Start Date/Time,character,10,4,
-ADSL,RFENDTC,Subject Reference End Date/Time,character,10,5,
-ADSL,RFXSTDTC,Date/Time of First Study Treatment,character,10,6,
-ADSL,RFXENDTC,Date/Time of Last Study Treatment,character,10,7,
-ADSL,RFICDTC,Date/Time of Informed Consent,character,19,8,
-ADSL,RFPENDTC,Date/Time of End of Participation,character,16,9,
-ADSL,DTHDTC,Date/Time of Death,character,10,10,
-ADSL,DTHFL,Subject Death Flag,character,1,11,
-ADSL,SITEID,Study Site Identifier,character,3,12,
-ADSL,BRTHDTC,Date/Time of Birth,character,10,13,
-ADSL,AGE,Age,numeric,8,14,
-ADSL,AGEU,Age Units,character,5,15,
-ADSL,SEX,Sex,character,1,16,
-ADSL,RACE,Race,character,32,17,
-ADSL,ETHNIC,Ethnicity,character,22,18,
-ADSL,ARMCD,Planned Arm Code,character,8,19,
-ADSL,ARM,Description of Planned Arm,character,20,20,
-ADSL,ACTARMCD,Actual Arm Code,character,8,21,
-ADSL,ACTARM,Description of Actual Arm,character,20,22,
-ADSL,COUNTRY,Country,character,3,23,
-ADSL,DMDTC,Date/Time of Collection,character,10,24,
-ADSL,DMDY,Study Day of Collection,numeric,8,25,
-ADSL,ARMNRS,Reason Arm and/or Actual Arm is Null,character,14,26,
-ADSL,ACTARMUD,Description of Unplanned Actual Arm,character,40,27,
-ADSL,TRT01P,Planned Treatment for Period 01,character,20,28,
-ADSL,TRT01A,Actual Treatment for Period 01,character,20,29,
-ADSL,TRTSDTM,Datetime of First Exposure to Treatment,numeric,8,30,DATETIME20.
-ADSL,TRTSTMF,Time Imputation Flag for TRTSDTM,character,1,31,
-ADSL,TRTEDTM,Datetime of Last Exposure to Treatment,numeric,8,32,DATETIME20.
-ADSL,TRTETMF,Time Imputation Flag for TRTEDTM,character,1,33,
-ADSL,TRTSDT,Date of First Exposure to Treatment,numeric,8,34,DATE9.
-ADSL,TRTEDT,Date of Last Exposure to Treatment,numeric,8,35,DATE9.
-ADSL,TRTDURD,Total Treatment Duration (Days),numeric,8,36,
-ADSL,RANDDT,Date of Randomization,numeric,8,37,DATE9.
-ADSL,EOSDT,End of Study Date,numeric,8,38,DATE9.
-ADSL,EOSSTT,End of Study Status,character,12,39,
-ADSL,DCSREAS,Reason for Discontinuation from Study,character,27,40,
-ADSL,DTHDT,Date of Death,numeric,8,41,DATE9.
-ADSL,DTHDTF,Date of Death Imputation Flag,character,1,42,
-ADSL,SAFFL,Safety Population Flag,character,1,43,
-ADSL,ITTFL,Intent-To-Treat Population Flag,character,1,44,
-ADSL,AGEGR1N,Pooled Age Group 1 (N),numeric,8,45,
-ADSL,AGEGR1,Pooled Age Group 1,character,5,46,
-ADLB,STUDYID,Study Identifier,character,12,1,
-ADLB,USUBJID,Unique Subject Identifier,character,11,2,
-ADLB,ASEQ,Analysis Sequence Number,numeric,8,3,
-ADLB,TRTP,Planned Treatment,character,20,4,
-ADLB,TRTA,Actual Treatment,character,20,5,
-ADLB,TRT01P,Planned Treatment for Period 01,character,20,6,
-ADLB,TRT01A,Actual Treatment for Period 01,character,20,7,
-ADLB,TRTSDT,Date of First Exposure to Treatment,numeric,8,8,DATE9.
-ADLB,TRTEDT,Date of Last Exposure to Treatment,numeric,8,9,DATE9.
-ADLB,SAFFL,Safety Population Flag,character,1,10,
-ADLB,ITTFL,Intent-To-Treat Population Flag,character,1,11,
-ADLB,AGEGR1,Pooled Age Group 1,character,5,12,
-ADLB,SEX,Sex,character,1,13,
-ADLB,PARAMCD,Parameter Code,character,5,14,
-ADLB,PARAM,Parameter,character,32,15,
-ADLB,PARAMN,Parameter (N),numeric,8,16,
-ADLB,PARCAT1,Parameter Category 1,character,10,17,
-ADLB,AVAL,Analysis Value,numeric,8,18,
-ADLB,AVALC,Analysis Value (C),character,8,19,
-ADLB,AVALU,Analysis Value Unit,character,6,20,
-ADLB,ABLFL,Baseline Record Flag,character,1,21,
-ADLB,BASE,Baseline Value,numeric,8,22,
-ADLB,CHG,Change from Baseline,numeric,8,23,
-ADLB,PCHG,Percent Change from Baseline,numeric,8,24,
-ADLB,ANRLO,Analysis Normal Range Lower Limit,numeric,8,25,
-ADLB,ANRHI,Analysis Normal Range Upper Limit,numeric,8,26,
-ADLB,ANRIND,Analysis Reference Range Indicator,character,6,27,
-ADLB,BNRIND,Baseline Reference Range Indicator,character,6,28,
-ADLB,SHIFT1,Shift 1 (Baseline to Analysis Range),character,16,29,
-ADLB,AVISIT,Analysis Visit,character,17,30,
-ADLB,AVISITN,Analysis Visit (N),numeric,8,31,
-ADLB,ADT,Analysis Date,numeric,8,32,DATE9.
-ADLB,ADY,Analysis Relative Day,numeric,8,33,
-ADLB,LBSEQ,Sequence Number,numeric,8,34,
-ADLB,LBTESTCD,Lab Test or Examination Short Name,character,5,35,
-ADLB,LBTEST,Lab Test or Examination Name,character,26,36,
-ADLB,LBCAT,Category for Lab Test,character,10,37,
-ADLB,LBSTRESN,Numeric Result/Finding in Std Units,numeric,8,38,
-ADLB,LBBLFL,Baseline Flag,character,1,39,
-ADLB,VISIT,Visit Name,character,17,40,
-ADLB,VISITNUM,Visit Number,numeric,8,41,
-ADLB,LBDTC,Date/Time of Specimen Collection,character,16,42,
-ADAE,STUDYID,Study Identifier,character,12,1,
-ADAE,USUBJID,Unique Subject Identifier,character,11,2,
-ADAE,ASEQ,Analysis Sequence Number,numeric,8,3,
-ADAE,TRT01P,Planned Treatment for Period 01,character,20,4,
-ADAE,TRT01A,Actual Treatment for Period 01,character,20,5,
-ADAE,TRTSDT,Date of First Exposure to Treatment,numeric,8,6,DATE9.
-ADAE,TRTEDT,Date of Last Exposure to Treatment,numeric,8,7,DATE9.
-ADAE,SAFFL,Safety Population Flag,character,1,8,
-ADAE,AGEGR1,Pooled Age Group 1,character,5,9,
-ADAE,SEX,Sex,character,1,10,
-ADAE,AETERM,Reported Term for the Adverse Event,character,46,11,
-ADAE,AEDECOD,Dictionary-Derived Term,character,46,12,
-ADAE,AEBODSYS,Body System or Organ Class,character,67,13,
-ADAE,ASTDT,Analysis Start Date,numeric,8,14,DATE9.
-ADAE,ASTDTF,Analysis Start Date Imputation Flag,character,1,15,
-ADAE,ASTDY,Analysis Start Relative Day,numeric,8,16,
-ADAE,AENDT,Analysis End Date,numeric,8,17,DATE9.
-ADAE,AENDY,Analysis End Relative Day,numeric,8,18,
-ADAE,ADY,Analysis Relative Day,numeric,8,19,
-ADAE,ADURN,Analysis Duration (N),numeric,8,20,
-ADAE,ADURU,Analysis Duration Units,character,4,21,
-ADAE,ASEV,Analysis Severity/Intensity,character,8,22,
-ADAE,ASEVN,Analysis Severity/Intensity (N),numeric,8,23,
-ADAE,AESEV,Severity/Intensity,character,8,24,
-ADAE,AESER,Serious Event,character,1,25,
-ADAE,AREL,Analysis Causality,character,8,26,
-ADAE,AEREL,Causality,character,8,27,
-ADAE,AEOUT,Outcome of Adverse Event,character,26,28,
-ADAE,TRTEMFL,Treatment Emergent Analysis Flag,character,1,29,
-ADAE,AOCCFL,1st Occurrence within Subject Flag,character,1,30,
-ADAE,AOCCSFL,1st Occurrence of SOC Flag,character,1,31,
-ADAE,AOCCPFL,1st Occurrence of Preferred Term Flag,character,1,32,
-ADAE,AESEQ,Sequence Number,numeric,8,33,
-ADAE,AESTDTC,Start Date/Time of Adverse Event,character,10,34,
-ADAE,AEENDTC,End Date/Time of Adverse Event,character,10,35,
-ADAE,AESTDY,Study Day of Start of Adverse Event,numeric,8,36,
-ADAE,AEENDY,Study Day of End of Adverse Event,numeric,8,37,
+dataset,variable,label,type,length,order,format,datatype,origin,source,method,codelist
+ADSL,STUDYID,Study Identifier,character,12,1,,text,Predecessor,DM.STUDYID,,
+ADSL,USUBJID,Unique Subject Identifier,character,11,2,,text,Predecessor,DM.USUBJID,,
+ADSL,SUBJID,Subject Identifier for the Study,character,4,3,,text,Predecessor,DM.SUBJID,,
+ADSL,RFSTDTC,Subject Reference Start Date/Time,character,10,4,,text,Predecessor,DM.RFSTDTC,,
+ADSL,RFENDTC,Subject Reference End Date/Time,character,10,5,,text,Predecessor,DM.RFENDTC,,
+ADSL,RFXSTDTC,Date/Time of First Study Treatment,character,10,6,,text,Predecessor,DM.RFXSTDTC,,
+ADSL,RFXENDTC,Date/Time of Last Study Treatment,character,10,7,,text,Predecessor,DM.RFXENDTC,,
+ADSL,RFICDTC,Date/Time of Informed Consent,character,19,8,,text,Predecessor,DM.RFICDTC,,
+ADSL,RFPENDTC,Date/Time of End of Participation,character,16,9,,text,Predecessor,DM.RFPENDTC,,
+ADSL,DTHDTC,Date/Time of Death,character,10,10,,text,Predecessor,DM.DTHDTC,,
+ADSL,DTHFL,Subject Death Flag,character,1,11,,text,Predecessor,DM.DTHFL,,
+ADSL,SITEID,Study Site Identifier,character,3,12,,text,Predecessor,DM.SITEID,,
+ADSL,BRTHDTC,Date/Time of Birth,character,10,13,,text,Predecessor,DM.BRTHDTC,,
+ADSL,AGE,Age,numeric,8,14,,integer,Predecessor,DM.AGE,,
+ADSL,AGEU,Age Units,character,5,15,,text,Predecessor,DM.AGEU,,
+ADSL,SEX,Sex,character,1,16,,text,Predecessor,DM.SEX,,CL.SEX
+ADSL,RACE,Race,character,32,17,,text,Predecessor,DM.RACE,,
+ADSL,ETHNIC,Ethnicity,character,22,18,,text,Predecessor,DM.ETHNIC,,
+ADSL,ARMCD,Planned Arm Code,character,8,19,,text,Predecessor,DM.ARMCD,,
+ADSL,ARM,Description of Planned Arm,character,20,20,,text,Predecessor,DM.ARM,,
+ADSL,ACTARMCD,Actual Arm Code,character,8,21,,text,Predecessor,DM.ACTARMCD,,
+ADSL,ACTARM,Description of Actual Arm,character,20,22,,text,Predecessor,DM.ACTARM,,
+ADSL,COUNTRY,Country,character,3,23,,text,Predecessor,DM.COUNTRY,,
+ADSL,DMDTC,Date/Time of Collection,character,10,24,,text,Predecessor,DM.DMDTC,,
+ADSL,DMDY,Study Day of Collection,numeric,8,25,,integer,Predecessor,DM.DMDY,,
+ADSL,ARMNRS,Reason Arm and/or Actual Arm is Null,character,14,26,,text,Predecessor,DM.ARMNRS,,
+ADSL,ACTARMUD,Description of Unplanned Actual Arm,character,40,27,,text,Predecessor,DM.ACTARMUD,,
+ADSL,TRT01P,Planned Treatment for Period 01,character,20,28,,text,Derived,,DM.ARM; missing when ARMCD = 'Scrnfail'.,CL.TRT
+ADSL,TRT01A,Actual Treatment for Period 01,character,20,29,,text,Derived,,DM.ACTARM; missing when ACTARMCD = 'Scrnfail'.,CL.TRT
+ADSL,TRT01PN,Planned Treatment for Period 01 (N),numeric,8,30,,integer,Derived,,"Daily dose in mg for TRT01P: Placebo = 0, Xanomeline Low Dose = 54, Xanomeline High Dose = 81.",CL.TRTN
+ADSL,TRT01AN,Actual Treatment for Period 01 (N),numeric,8,31,,integer,Derived,,"Daily dose in mg for TRT01A: Placebo = 0, Xanomeline Low Dose = 54, Xanomeline High Dose = 81.",CL.TRTN
+ADSL,TRTSDTM,Datetime of First Exposure to Treatment,numeric,8,32,DATETIME20.,integer,Derived,,"EX.EXSTDTC of the first qualifying dose (EXDOSE > 0, or EXDOSE = 0 on placebo), ordered by start and EXSEQ; missing time imputed as 00:00:00.",
+ADSL,TRTSTMF,Time Imputation Flag for TRTSDTM,character,1,33,,text,Derived,,"Time imputation flag for TRTSDTM ('H' = hours, minutes and seconds imputed).",
+ADSL,TRTEDTM,Datetime of Last Exposure to Treatment,numeric,8,34,DATETIME20.,integer,Derived,,"EX.EXENDTC of the last qualifying dose, ordered by end and EXSEQ; missing time imputed as 23:59:59.",
+ADSL,TRTETMF,Time Imputation Flag for TRTEDTM,character,1,35,,text,Derived,,"Time imputation flag for TRTEDTM ('H' = hours, minutes and seconds imputed).",
+ADSL,TRTSDT,Date of First Exposure to Treatment,numeric,8,36,DATE9.,integer,Derived,,Date part of TRTSDTM.,
+ADSL,TRTEDT,Date of Last Exposure to Treatment,numeric,8,37,DATE9.,integer,Derived,,Date part of TRTEDTM.,
+ADSL,RANDDT,Date of Randomization,numeric,8,38,DATE9.,integer,Derived,,"DS.DSSTDTC where DSDECOD = 'RANDOMIZED', as a date.",
+ADSL,EOSDT,End of Study Date,numeric,8,39,DATE9.,integer,Derived,,"DS.DSSTDTC of the last record with DSCAT = 'DISPOSITION EVENT' and DSDECOD not 'SCREEN FAILURE', as a date.",
+ADSL,EOSSTT,End of Study Status,character,12,40,,text,Derived,,"'COMPLETED' if DS.DSDECOD = 'COMPLETED' on the record used for EOSDT, otherwise 'DISCONTINUED'; missing for screen failures.",CL.EOSSTT
+ADSL,DCSREAS,Reason for Discontinuation from Study,character,27,41,,text,Derived,,DS.DSDECOD on the record used for EOSDT when not 'COMPLETED'; missing otherwise.,
+ADSL,TRTDURD,Total Treatment Duration (Days),numeric,8,42,,integer,Derived,,TRTEDT - TRTSDT + 1.,
+ADSL,RFENDT,Date of End of Participation,numeric,8,43,DATE9.,integer,Derived,,DM.RFENDTC as a date.,
+ADSL,DTHDT,Date of Death,numeric,8,44,DATE9.,integer,Derived,,DM.DTHDTC as a date; a missing day or month would be imputed to the first (none in this study).,
+ADSL,DTHDTF,Date of Death Imputation Flag,character,1,45,,text,Derived,,Imputation flag for DTHDT.,
+ADSL,SAFFL,Safety Population Flag,character,1,46,,text,Derived,,"'Y' if the subject has at least one EX record with EXDOSE > 0, or EXDOSE = 0 on placebo; 'N' otherwise.",CL.NY
+ADSL,ITTFL,Intent-To-Treat Population Flag,character,1,47,,text,Derived,,'Y' if ARMCD is not missing and not 'Scrnfail' (randomised); 'N' otherwise.,CL.NY
+ADSL,EFFFL,Efficacy Population Flag,character,1,48,,text,Derived,,'Y' if SAFFL = 'Y' and the subject has at least one QS record with VISITNUM > 3 for ADAS-Cog and at least one for CIBIC+; 'N' otherwise.,CL.NY
+ADSL,COMP24FL,Completers of Week 24 Population Flag,character,1,49,,text,Derived,,'Y' if the subject has an SV record with VISITNUM = 12 (Week 24) and RFENDT is on or after that visit date; 'N' otherwise.,CL.NY
+ADSL,AGEGR1N,Pooled Age Group 1 (N),numeric,8,50,,integer,Derived,,1 if AGE < 65; 2 if 65 <= AGE <= 80; 3 if AGE > 80 (cut points from metadata/adsl_agegr1.csv).,CL.AGEGR1N
+ADSL,AGEGR1,Pooled Age Group 1,character,5,51,,text,Derived,,"Label for AGEGR1N: '<65', '65-80', '>80'.",CL.AGEGR1
+ADSL,SITEGR1,Pooled Site Group 1,character,3,52,,text,Derived,,"SITEID, or '900' when any planned arm has fewer than 3 ITT subjects at the site.",
+ADLB,STUDYID,Study Identifier,character,12,1,,text,Predecessor,ADSL.STUDYID,,
+ADLB,USUBJID,Unique Subject Identifier,character,11,2,,text,Predecessor,ADSL.USUBJID,,
+ADLB,ASEQ,Analysis Sequence Number,numeric,8,3,,integer,Derived,,"Sequence number within USUBJID, ordered by PARAMCD, ADT and LBSEQ.",
+ADLB,TRTP,Planned Treatment,character,20,4,,text,Derived,,ADSL.TRT01P (single-period study).,CL.TRT
+ADLB,TRTPN,Planned Treatment (N),numeric,8,5,,integer,Derived,,ADSL.TRT01PN (single-period study).,CL.TRTN
+ADLB,TRTA,Actual Treatment,character,20,6,,text,Derived,,ADSL.TRT01A (single-period study).,CL.TRT
+ADLB,TRTAN,Actual Treatment (N),numeric,8,7,,integer,Derived,,ADSL.TRT01AN (single-period study).,CL.TRTN
+ADLB,TRT01P,Planned Treatment for Period 01,character,20,8,,text,Predecessor,ADSL.TRT01P,,CL.TRT
+ADLB,TRT01PN,Planned Treatment for Period 01 (N),numeric,8,9,,integer,Predecessor,ADSL.TRT01PN,,CL.TRTN
+ADLB,TRT01A,Actual Treatment for Period 01,character,20,10,,text,Predecessor,ADSL.TRT01A,,CL.TRT
+ADLB,TRT01AN,Actual Treatment for Period 01 (N),numeric,8,11,,integer,Predecessor,ADSL.TRT01AN,,CL.TRTN
+ADLB,TRTSDT,Date of First Exposure to Treatment,numeric,8,12,DATE9.,integer,Predecessor,ADSL.TRTSDT,,
+ADLB,TRTEDT,Date of Last Exposure to Treatment,numeric,8,13,DATE9.,integer,Predecessor,ADSL.TRTEDT,,
+ADLB,SAFFL,Safety Population Flag,character,1,14,,text,Predecessor,ADSL.SAFFL,,CL.NY
+ADLB,ITTFL,Intent-To-Treat Population Flag,character,1,15,,text,Predecessor,ADSL.ITTFL,,CL.NY
+ADLB,AGEGR1,Pooled Age Group 1,character,5,16,,text,Predecessor,ADSL.AGEGR1,,CL.AGEGR1
+ADLB,SEX,Sex,character,1,17,,text,Predecessor,ADSL.SEX,,CL.SEX
+ADLB,PARAMCD,Parameter Code,character,5,18,,text,Derived,,From LB.LBTESTCD via metadata/adlb_params.csv.,CL.PARAMCD.ADLB
+ADLB,PARAM,Parameter,character,32,19,,text,Derived,,"Parameter description for PARAMCD, including unit (metadata/adlb_params.csv).",
+ADLB,PARAMN,Parameter (N),numeric,8,20,,integer,Derived,,Numeric order of PARAMCD (metadata/adlb_params.csv).,
+ADLB,PARCAT1,Parameter Category 1,character,10,21,,text,Derived,,Parameter category (metadata/adlb_params.csv).,
+ADLB,AVAL,Analysis Value,numeric,8,22,,float,Predecessor,LB.LBSTRESN,,
+ADLB,AVALC,Analysis Value (C),character,8,23,,text,Predecessor,LB.LBSTRESC,,
+ADLB,AVALU,Analysis Value Unit,character,6,24,,text,Predecessor,LB.LBSTRESU,,
+ADLB,ABLFL,Baseline Record Flag,character,1,25,,text,Derived,,'Y' on the last record with non-missing AVAL and ADT <= TRTSDT within USUBJID and PARAMCD; ties on ADT broken by the highest LBSEQ.,CL.Y
+ADLB,BASE,Baseline Value,numeric,8,26,,float,Derived,,AVAL of the ABLFL = 'Y' record of the subject and parameter.,
+ADLB,CHG,Change from Baseline,numeric,8,27,,float,Derived,,"AVAL - BASE, on records with ADT > TRTSDT.",
+ADLB,PCHG,Percent Change from Baseline,numeric,8,28,,float,Derived,,"100 * (AVAL - BASE) / BASE, on records with ADT > TRTSDT.",
+ADLB,ANRLO,Analysis Normal Range Lower Limit,numeric,8,29,,float,Predecessor,LB.LBSTNRLO,,
+ADLB,ANRHI,Analysis Normal Range Upper Limit,numeric,8,30,,float,Predecessor,LB.LBSTNRHI,,
+ADLB,ANRIND,Analysis Reference Range Indicator,character,6,31,,text,Derived,,'LOW' if AVAL < ANRLO; 'HIGH' if AVAL > ANRHI; 'NORMAL' otherwise; missing if AVAL is missing.,CL.NRIND
+ADLB,BNRIND,Baseline Reference Range Indicator,character,6,32,,text,Derived,,ANRIND of the ABLFL = 'Y' record of the subject and parameter.,CL.NRIND
+ADLB,SHIFT1,Shift 1 (Baseline to Analysis Range),character,16,33,,text,Derived,,"BNRIND || ' to ' || ANRIND, on records with ADT > TRTSDT where both are non-missing.",
+ADLB,AVISIT,Analysis Visit,character,17,34,,text,Derived,,LB.VISIT; all unscheduled visits grouped as 'UNSCHEDULED'.,
+ADLB,AVISITN,Analysis Visit (N),numeric,8,35,,integer,Derived,,LB.VISITNUM; 999 for 'UNSCHEDULED'.,
+ADLB,ADT,Analysis Date,numeric,8,36,DATE9.,integer,Derived,,Date part of LB.LBDTC.,
+ADLB,ADY,Analysis Relative Day,numeric,8,37,,integer,Derived,,"ADT - TRTSDT + 1 if ADT >= TRTSDT, otherwise ADT - TRTSDT.",
+ADLB,LBSEQ,Sequence Number,numeric,8,38,,integer,Predecessor,LB.LBSEQ,,
+ADLB,LBTESTCD,Lab Test or Examination Short Name,character,5,39,,text,Predecessor,LB.LBTESTCD,,
+ADLB,LBTEST,Lab Test or Examination Name,character,26,40,,text,Predecessor,LB.LBTEST,,
+ADLB,LBCAT,Category for Lab Test,character,10,41,,text,Predecessor,LB.LBCAT,,
+ADLB,LBSTRESN,Numeric Result/Finding in Std Units,numeric,8,42,,float,Predecessor,LB.LBSTRESN,,
+ADLB,LBBLFL,Baseline Flag,character,1,43,,text,Predecessor,LB.LBBLFL,,
+ADLB,VISIT,Visit Name,character,17,44,,text,Predecessor,LB.VISIT,,
+ADLB,VISITNUM,Visit Number,numeric,8,45,,float,Predecessor,LB.VISITNUM,,
+ADLB,LBDTC,Date/Time of Specimen Collection,character,16,46,,text,Predecessor,LB.LBDTC,,
+ADAE,STUDYID,Study Identifier,character,12,1,,text,Predecessor,ADSL.STUDYID,,
+ADAE,USUBJID,Unique Subject Identifier,character,11,2,,text,Predecessor,ADSL.USUBJID,,
+ADAE,ASEQ,Analysis Sequence Number,numeric,8,3,,integer,Derived,,"Sequence number within USUBJID, ordered by ASTDT and AESEQ.",
+ADAE,TRTA,Actual Treatment,character,20,4,,text,Derived,,ADSL.TRT01A (single-period study).,CL.TRT
+ADAE,TRTAN,Actual Treatment (N),numeric,8,5,,integer,Derived,,ADSL.TRT01AN (single-period study).,CL.TRTN
+ADAE,TRT01P,Planned Treatment for Period 01,character,20,6,,text,Predecessor,ADSL.TRT01P,,CL.TRT
+ADAE,TRT01A,Actual Treatment for Period 01,character,20,7,,text,Predecessor,ADSL.TRT01A,,CL.TRT
+ADAE,TRTSDT,Date of First Exposure to Treatment,numeric,8,8,DATE9.,integer,Predecessor,ADSL.TRTSDT,,
+ADAE,TRTEDT,Date of Last Exposure to Treatment,numeric,8,9,DATE9.,integer,Predecessor,ADSL.TRTEDT,,
+ADAE,SAFFL,Safety Population Flag,character,1,10,,text,Predecessor,ADSL.SAFFL,,CL.NY
+ADAE,AGEGR1,Pooled Age Group 1,character,5,11,,text,Predecessor,ADSL.AGEGR1,,CL.AGEGR1
+ADAE,SEX,Sex,character,1,12,,text,Predecessor,ADSL.SEX,,CL.SEX
+ADAE,AETERM,Reported Term for the Adverse Event,character,46,13,,text,Predecessor,AE.AETERM,,
+ADAE,AEDECOD,Dictionary-Derived Term,character,46,14,,text,Predecessor,AE.AEDECOD,,
+ADAE,AEBODSYS,Body System or Organ Class,character,67,15,,text,Predecessor,AE.AEBODSYS,,
+ADAE,CQ01NAM,Customized Query 01 Name,character,19,16,,text,Derived,,"'DERMATOLOGIC EVENTS' if AEDECOD contains APPLICATION, DERMATITIS, ERYTHEMA or BLISTER, or AEBODSYS = 'SKIN AND SUBCUTANEOUS TISSUE DISORDERS' and AEDECOD is not COLD SWEAT, HYPERHIDROSIS or ALOPECIA; missing otherwise.",
+ADAE,ASTDT,Analysis Start Date,numeric,8,17,DATE9.,integer,Derived,,"AE.AESTDTC as a date. Missing day or month imputed to the first; if TRTSDT lies within the range the partial date allows, TRTSDT is used. A missing year is not imputed.",
+ADAE,ASTDTF,Analysis Start Date Imputation Flag,character,1,18,,text,Derived,,"'D' if the day of ASTDT was imputed, 'M' if month and day were imputed.",CL.DATEFL
+ADAE,ASTDY,Analysis Start Relative Day,numeric,8,19,,integer,Derived,,"ASTDT - TRTSDT + 1 if ASTDT >= TRTSDT, otherwise ASTDT - TRTSDT.",
+ADAE,AENDT,Analysis End Date,numeric,8,20,DATE9.,integer,Derived,,AE.AEENDTC as a date; not imputed.,
+ADAE,AENDY,Analysis End Relative Day,numeric,8,21,,integer,Derived,,"AENDT - TRTSDT + 1 if AENDT >= TRTSDT, otherwise AENDT - TRTSDT.",
+ADAE,ADY,Analysis Relative Day,numeric,8,22,,integer,Derived,,ASTDY.,
+ADAE,ADURN,Analysis Duration (N),numeric,8,23,,integer,Derived,,AENDT - ASTDT + 1.,
+ADAE,ADURU,Analysis Duration Units,character,4,24,,text,Assigned,,'DAYS' when ADURN is not missing.,
+ADAE,ASEV,Analysis Severity/Intensity,character,8,25,,text,Derived,,AE.AESEV.,
+ADAE,ASEVN,Analysis Severity/Intensity (N),numeric,8,26,,integer,Derived,,"1 = MILD, 2 = MODERATE, 3 = SEVERE.",
+ADAE,AESEV,Severity/Intensity,character,8,27,,text,Predecessor,AE.AESEV,,
+ADAE,AESER,Serious Event,character,1,28,,text,Predecessor,AE.AESER,,
+ADAE,AREL,Analysis Causality,character,8,29,,text,Derived,,AE.AEREL.,
+ADAE,AEREL,Causality,character,8,30,,text,Predecessor,AE.AEREL,,
+ADAE,AEOUT,Outcome of Adverse Event,character,26,31,,text,Predecessor,AE.AEOUT,,
+ADAE,TRTEMFL,Treatment Emergent Analysis Flag,character,1,32,,text,Derived,,'Y' if TRTSDT <= ASTDT <= TRTEDT + 30 days (an event with missing ASTDT is emergent unless AENDT < TRTSDT); missing otherwise.,CL.Y
+ADAE,AOCCFL,1st Occurrence within Subject Flag,character,1,33,,text,Derived,,'Y' on the first record by ASTDT and AESEQ within USUBJID among TRTEMFL = 'Y' records.,CL.Y
+ADAE,AOCCSFL,1st Occurrence of SOC Flag,character,1,34,,text,Derived,,'Y' on the first record by ASTDT and AESEQ within USUBJID and AEBODSYS among TRTEMFL = 'Y' records.,CL.Y
+ADAE,AOCCPFL,1st Occurrence of Preferred Term Flag,character,1,35,,text,Derived,,"'Y' on the first record by ASTDT and AESEQ within USUBJID, AEBODSYS and AEDECOD among TRTEMFL = 'Y' records.",CL.Y
+ADAE,AOCC01FL,1st Occurrence 01 Flag for CQ01,character,1,36,,text,Derived,,'Y' on the first record by ASTDT and AESEQ within USUBJID among records with TRTEMFL = 'Y' and CQ01NAM = 'DERMATOLOGIC EVENTS'.,CL.Y
+ADAE,AESEQ,Sequence Number,numeric,8,37,,integer,Predecessor,AE.AESEQ,,
+ADAE,AESTDTC,Start Date/Time of Adverse Event,character,10,38,,text,Predecessor,AE.AESTDTC,,
+ADAE,AEENDTC,End Date/Time of Adverse Event,character,10,39,,text,Predecessor,AE.AEENDTC,,
+ADAE,AESTDY,Study Day of Start of Adverse Event,numeric,8,40,,integer,Predecessor,AE.AESTDY,,
+ADAE,AEENDY,Study Day of End of Adverse Event,numeric,8,41,,integer,Predecessor,AE.AEENDY,,
+ADTTE,STUDYID,Study Identifier,character,12,1,,text,Predecessor,ADSL.STUDYID,,
+ADTTE,USUBJID,Unique Subject Identifier,character,11,2,,text,Predecessor,ADSL.USUBJID,,
+ADTTE,ASEQ,Analysis Sequence Number,numeric,8,3,,integer,Derived,,"Sequence number within USUBJID, ordered by PARAMCD.",
+ADTTE,TRTP,Planned Treatment,character,20,4,,text,Derived,,ADSL.TRT01P (single-period study).,CL.TRT
+ADTTE,TRTPN,Planned Treatment (N),numeric,8,5,,integer,Derived,,ADSL.TRT01PN (single-period study).,CL.TRTN
+ADTTE,TRTA,Actual Treatment,character,20,6,,text,Derived,,ADSL.TRT01A (single-period study).,CL.TRT
+ADTTE,TRTAN,Actual Treatment (N),numeric,8,7,,integer,Derived,,ADSL.TRT01AN (single-period study).,CL.TRTN
+ADTTE,TRTSDT,Date of First Exposure to Treatment,numeric,8,8,DATE9.,integer,Predecessor,ADSL.TRTSDT,,
+ADTTE,TRTEDT,Date of Last Exposure to Treatment,numeric,8,9,DATE9.,integer,Predecessor,ADSL.TRTEDT,,
+ADTTE,SAFFL,Safety Population Flag,character,1,10,,text,Predecessor,ADSL.SAFFL,,CL.NY
+ADTTE,AGE,Age,numeric,8,11,,integer,Predecessor,ADSL.AGE,,
+ADTTE,AGEGR1,Pooled Age Group 1,character,5,12,,text,Predecessor,ADSL.AGEGR1,,CL.AGEGR1
+ADTTE,SEX,Sex,character,1,13,,text,Predecessor,ADSL.SEX,,CL.SEX
+ADTTE,SITEGR1,Pooled Site Group 1,character,3,14,,text,Predecessor,ADSL.SITEGR1,,
+ADTTE,PARAMCD,Parameter Code,character,8,15,,text,Assigned,,'TTDE'.,CL.PARAMCD.ADTTE
+ADTTE,PARAM,Parameter,character,40,16,,text,Assigned,,'Time to First Dermatologic Event (days)'.,
+ADTTE,PARAMN,Parameter (N),numeric,8,17,,integer,Assigned,,1.,
+ADTTE,AVAL,Analysis Value,numeric,8,18,,integer,Derived,,ADT - STARTDT + 1.,
+ADTTE,AVALU,Analysis Value Unit,character,4,19,,text,Assigned,,'DAYS'.,
+ADTTE,STARTDT,Time-to-Event Origin Date for Subject,numeric,8,20,DATE9.,integer,Derived,,ADSL.TRTSDT.,
+ADTTE,ADT,Analysis Date,numeric,8,21,DATE9.,integer,Derived,,"ADAE.ASTDT of the first ADAE record with TRTEMFL = 'Y' and CQ01NAM = 'DERMATOLOGIC EVENTS' (AOCC01FL = 'Y'); if none, ADSL.RFENDT.",
+ADTTE,CNSR,Censor,numeric,8,22,,integer,Derived,,"0 if ADT is a dermatologic event, 1 if censored at RFENDT.",CL.CNSR
+ADTTE,EVNTDESC,Event or Censoring Description,character,25,23,,text,Derived,,"'DERMATOLOGIC EVENT' if CNSR = 0, 'END OF STUDY' if CNSR = 1.",
+ADTTE,SRCDOM,Source Data,character,4,24,,text,Derived,,"'ADAE' if CNSR = 0, 'ADSL' if CNSR = 1.",
+ADTTE,SRCVAR,Source Variable,character,8,25,,text,Derived,,"'ASTDT' if CNSR = 0, 'RFENDT' if CNSR = 1.",
+ADTTE,SRCSEQ,Source Sequence Number,numeric,8,26,,integer,Derived,,ADAE.AESEQ of the event record if CNSR = 0; missing otherwise.,
+ADQSADAS,STUDYID,Study Identifier,character,12,1,,text,Predecessor,ADSL.STUDYID,,
+ADQSADAS,USUBJID,Unique Subject Identifier,character,11,2,,text,Predecessor,ADSL.USUBJID,,
+ADQSADAS,ASEQ,Analysis Sequence Number,numeric,8,3,,integer,Derived,,"Sequence number within USUBJID, ordered by PARAMCD, AVISITN, ADT, QSSEQ and DTYPE.",
+ADQSADAS,TRTP,Planned Treatment,character,20,4,,text,Derived,,ADSL.TRT01P (single-period study).,CL.TRT
+ADQSADAS,TRTPN,Planned Treatment (N),numeric,8,5,,integer,Derived,,ADSL.TRT01PN (single-period study).,CL.TRTN
+ADQSADAS,TRTSDT,Date of First Exposure to Treatment,numeric,8,6,DATE9.,integer,Predecessor,ADSL.TRTSDT,,
+ADQSADAS,TRTEDT,Date of Last Exposure to Treatment,numeric,8,7,DATE9.,integer,Predecessor,ADSL.TRTEDT,,
+ADQSADAS,ITTFL,Intent-To-Treat Population Flag,character,1,8,,text,Predecessor,ADSL.ITTFL,,CL.NY
+ADQSADAS,EFFFL,Efficacy Population Flag,character,1,9,,text,Predecessor,ADSL.EFFFL,,CL.NY
+ADQSADAS,COMP24FL,Completers of Week 24 Population Flag,character,1,10,,text,Predecessor,ADSL.COMP24FL,,CL.NY
+ADQSADAS,SITEGR1,Pooled Site Group 1,character,3,11,,text,Predecessor,ADSL.SITEGR1,,
+ADQSADAS,AGE,Age,numeric,8,12,,integer,Predecessor,ADSL.AGE,,
+ADQSADAS,AGEGR1,Pooled Age Group 1,character,5,13,,text,Predecessor,ADSL.AGEGR1,,CL.AGEGR1
+ADQSADAS,SEX,Sex,character,1,14,,text,Predecessor,ADSL.SEX,,CL.SEX
+ADQSADAS,PARAMCD,Parameter Code,character,8,15,,text,Assigned,,'ACTOT' (QS.QSTESTCD).,CL.PARAMCD.ADQSADAS
+ADQSADAS,PARAM,Parameter,character,40,16,,text,Assigned,,'ADAS-Cog(11) Total Score'.,
+ADQSADAS,PARAMN,Parameter (N),numeric,8,17,,integer,Assigned,,1.,
+ADQSADAS,AVAL,Analysis Value,numeric,8,18,,float,Derived,,"QS.QSSTRESN; for DTYPE = 'LOCF' records, AVAL of the last analysed record (ANL01FL = 'Y', baseline included) of an earlier analysis visit.",
+ADQSADAS,BASE,Baseline Value,numeric,8,19,,float,Derived,,AVAL of the ABLFL = 'Y' record.,
+ADQSADAS,CHG,Change from Baseline,numeric,8,20,,float,Derived,,"AVAL - BASE, for AVISITN > 0.",
+ADQSADAS,PCHG,Percent Change from Baseline,numeric,8,21,,float,Derived,,"100 * (AVAL - BASE) / BASE, for AVISITN > 0.",
+ADQSADAS,ABLFL,Baseline Record Flag,character,1,22,,text,Derived,,'Y' on the ANL01FL = 'Y' record in the Baseline window.,CL.Y
+ADQSADAS,ANL01FL,Analysis Flag 01,character,1,23,,text,Derived,,"'Y' on the record closest to AWTARGET within each analysis visit window (ties: later ADT, then lowest QSSEQ), and on all DTYPE = 'LOCF' records.",CL.Y
+ADQSADAS,DTYPE,Derivation Type,character,8,24,,text,Derived,,"'LOCF' for records created for an expected Week 8, 16 or 24 visit without an analysed record.",CL.DTYPE
+ADQSADAS,AVISIT,Analysis Visit,character,10,25,,text,Derived,,"Analysis visit window containing ADY: Baseline (ADY <= 1), Week 8 (2-84), Week 16 (85-140), Week 24 (>= 141).",CL.AVISIT.ADQSADAS
+ADQSADAS,AVISITN,Analysis Visit (N),numeric,8,26,,integer,Derived,,"0, 8, 16, 24 for Baseline, Week 8, Week 16, Week 24.",
+ADQSADAS,ADT,Analysis Date,numeric,8,27,DATE9.,integer,Derived,,QS.QSDTC as a date (of the carried record for LOCF records).,
+ADQSADAS,ADY,Analysis Relative Day,numeric,8,28,,integer,Derived,,"ADT - TRTSDT + 1 if ADT >= TRTSDT, otherwise ADT - TRTSDT.",
+ADQSADAS,AWRANGE,Analysis Window Valid Relative Range,character,8,29,,text,Assigned,,Window range from metadata/adqsadas_windows.csv.,
+ADQSADAS,AWTARGET,Analysis Window Target,numeric,8,30,,integer,Assigned,,Target study day of the window (metadata/adqsadas_windows.csv).,
+ADQSADAS,AWTDIFF,Analysis Window Diff from Target,numeric,8,31,,integer,Derived,,|ADY - AWTARGET|.,
+ADQSADAS,AWLO,Analysis Window Beginning Timepoint,numeric,8,32,,integer,Assigned,,First study day of the window (metadata/adqsadas_windows.csv).,
+ADQSADAS,AWHI,Analysis Window Ending Timepoint,numeric,8,33,,integer,Assigned,,Last study day of the window (metadata/adqsadas_windows.csv).,
+ADQSADAS,AWU,Analysis Window Unit,character,4,34,,text,Assigned,,'DAYS'.,
+ADQSADAS,QSSEQ,Sequence Number,numeric,8,35,,integer,Predecessor,QS.QSSEQ,,
+ADQSADAS,VISIT,Visit Name,character,20,36,,text,Predecessor,QS.VISIT,,
+ADQSADAS,VISITNUM,Visit Number,numeric,8,37,,integer,Predecessor,QS.VISITNUM,,

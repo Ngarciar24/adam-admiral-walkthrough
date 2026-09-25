@@ -1,7 +1,8 @@
-# Rebuild every ADaM dataset from SDTM, export the XPT files, draw the figure,
-# run the R test suite, then re-check the exports from Python. If a run fails on
-# a missing system library, the fix is almost always one more package in the
-# apt-get line below.
+# Rebuild every ADaM dataset, the XPT files, define.xml, tables and figures;
+# compare with the published pilot ADaM; run the R test suite; then check the
+# exports from Python: cross-check, define.xml schema validation and ADaM
+# conformance checks. If a run fails on a missing system library, the fix is
+# almost always one more package in the apt-get line below.
 name: build-and-test
 
 on:
@@ -32,14 +33,23 @@ jobs:
 
       - uses: r-lib/actions/setup-renv@v2
 
-      - name: Rebuild datasets and run tests
+      - name: Rebuild datasets, compare with the pilot and run tests
         run: Rscript run_all.R
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Cross-check the XPT exports from Python
+      - name: Python checks (cross-check, define.xml, ADaM conformance)
         run: |
-          pip install pandas
+          pip install pandas lxml odmlib==0.2.1
           python3 python/check_adam.py
+          python3 python/validate_define.py
+          python3 python/adam_conformance.py
+
+      - name: Keep the QC reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qc-reports
+          path: outputs/qc/

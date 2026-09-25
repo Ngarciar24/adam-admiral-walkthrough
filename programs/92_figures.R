@@ -1,25 +1,24 @@
-# ---------------------------------------------------------------------------
-# 92_figures.R -- Figure 1: mean change from baseline in ALT by visit and arm
-#
-# Same slice of ADLB as Table 2 (programs/91_tables.R): safety population,
-# PARAMCD == "ALT", scheduled visits only. The figure and the table are two
-# views of the same rows, so every mean plotted here can be read off the table
-# and the table's n is the figure's n. Nothing is derived in this program; it
-# only summarises columns that already exist in ADLB.
-#
-# Error bars are +/- 1 standard error of the mean CHG within visit x arm. They
-# describe the precision of each plotted mean; they are not a hypothesis test.
-#
-# Only visits with at least 10 subjects in every arm are drawn. Table 2 keeps
-# every scheduled visit, including two ("AMBUL ECG REMOVAL", "RETRIEVAL") that
-# hold a single Low Dose record; a one-subject "mean" plotted as a point with
-# no error bar reads as a trend, so the figure applies a minimum n and says so.
-# The threshold is a presentation choice, not an analysis rule.
-#
-# Colours are three hues from the Okabe-Ito colour-blind-safe palette in a
-# fixed order per arm, and each arm also has its own point shape, so arm
-# identity never depends on colour alone.
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Program    : 92_figures.R
+# Study      : CDISCPILOT01 (public CDISC pilot test data, {pharmaversesdtm})
+# Purpose    : Figure 1: mean change from baseline in ALT by visit and planned
+#              treatment, +/- 1 standard error
+#              Figure 2: Kaplan-Meier plot of time to first dermatologic event
+# Inputs     : data/adam/adlb.rds; outputs/t2_alt_change_by_visit.csv
+#              data/adam/adtte.rds
+# Outputs    : outputs/f1_alt_chg_by_visit.png, .csv
+#              outputs/f2_ttde_km.png
+# Author     : Ignacio G. Ribelles
+# Created    : 2026-09-17
+# Change log : 2026-09-17  IGR  Initial version
+#              2026-09-25  IGR  Standard header
+#              2026-09-25  IGR  Figure 2 (Kaplan-Meier) added
+# Notes      : Same records as Table 2 (safety population, ALT, scheduled
+#              visits). Only visits with at least 10 subjects in every arm are
+#              drawn; Table 2 keeps all scheduled visits. The program stops if
+#              a plotted mean differs from the Table 2 cell. Colours are
+#              Okabe-Ito (colour-blind safe) and each arm has its own shape.
+# -----------------------------------------------------------------------------
 
 source("programs/00_setup.R")
 library(ggplot2)
@@ -103,3 +102,76 @@ ggsave(file.path(out_dir, "f1_alt_chg_by_visit.png"), fig1,
 write_csv(fig_dat, file.path(out_dir, "f1_alt_chg_by_visit.csv"))
 
 message("Wrote: outputs/f1_alt_chg_by_visit.png, outputs/f1_alt_chg_by_visit.csv")
+
+# =============================================================================
+# Figure 2 -- Kaplan-Meier: time to first dermatologic event
+# =============================================================================
+library(survival)
+
+adtte <- readRDS(file.path(adam_dir, "adtte.rds")) %>%
+  filter(PARAMCD == "TTDE", SAFFL == "Y") %>%
+  mutate(TRTA = factor(TRTA, levels = trt_levels), EVENT = 1 - CNSR)
+
+km <- survfit(Surv(AVAL, EVENT) ~ TRTA, data = adtte)
+
+# Step curves start at 1 on day 0; censored times are marked.
+km_dat <- broom::tidy(km) %>%
+  mutate(TRTA = factor(sub("^TRTA=", "", strata), levels = trt_levels)) %>%
+  select(TRTA, time, estimate, n.censor)
+km_dat <- bind_rows(
+  tibble(TRTA = factor(trt_levels, levels = trt_levels), time = 0, estimate = 1, n.censor = 0),
+  km_dat
+)
+
+# Numbers at risk every 28 days.
+risk_times <- seq(0, 196, by = 28)
+at_risk <- summary(km, times = risk_times, extend = TRUE)
+risk_dat <- tibble(
+  TRTA   = factor(sub("^TRTA=", "", at_risk$strata), levels = trt_levels),
+  time   = at_risk$time,
+  n.risk = at_risk$n.risk
+)
+
+fig2 <- ggplot(km_dat, aes(x = time, y = estimate, colour = TRTA)) +
+  geom_step(linewidth = 0.8) +
+  geom_point(data = filter(km_dat, n.censor > 0), aes(shape = TRTA), size = 1.8) +
+  scale_colour_manual(values = trt_colours, breaks = trt_levels) +
+  scale_shape_manual(values = c(3, 3, 3), breaks = trt_levels, guide = "none") +
+  scale_x_continuous(breaks = risk_times, limits = c(0, max(adtte$AVAL) + 2)) +
+  scale_y_continuous(limits = c(0, 1), labels = scales::percent) +
+  labs(
+    title    = "Figure 2. Time to first treatment-emergent dermatologic adverse event",
+    subtitle = "Kaplan-Meier estimate; + = censored at end of study. Safety population, actual treatment",
+    x        = "Days since first dose",
+    y        = "Event-free",
+    colour   = "Actual treatment (TRTA)",
+    caption  = paste0(
+      "Source: ADTTE (PARAMCD = 'TTDE'). Program: programs/92_figures.R | ggplot2 ",
+      packageVersion("ggplot2")
+    )
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    legend.position     = "top",
+    panel.grid.minor    = element_blank(),
+    plot.title.position = "plot",
+    plot.caption        = element_text(hjust = 0, colour = "grey40")
+  )
+
+risk_tbl <- ggplot(risk_dat, aes(x = time, y = TRTA, label = n.risk, colour = TRTA)) +
+  geom_text(size = 3.3) +
+  scale_colour_manual(values = trt_colours, guide = "none") +
+  scale_x_continuous(breaks = risk_times, limits = c(0, max(adtte$AVAL) + 2)) +
+  scale_y_discrete(limits = rev(trt_levels)) +
+  labs(x = NULL, y = NULL, title = "Number at risk") +
+  theme_minimal(base_size = 10) +
+  theme(panel.grid = element_blank(), axis.text.x = element_blank(),
+        plot.title = element_text(size = 10))
+
+fig2_out <- cowplot::plot_grid(fig2, risk_tbl, ncol = 1, rel_heights = c(4, 1.2), align = "v",
+                               axis = "lr")
+
+ggsave(file.path(out_dir, "f2_ttde_km.png"), fig2_out,
+       width = 9, height = 6, dpi = 150, bg = "white")
+
+message("Wrote: outputs/f2_ttde_km.png")

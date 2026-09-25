@@ -1,34 +1,31 @@
-# ---------------------------------------------------------------------------
-# 01_adsl.R -- ADSL, the Subject-Level Analysis Dataset
-#
-# Structure: exactly ONE ROW PER SUBJECT. ADSL is the only ADaM dataset that is
-# always required. Every other ADaM dataset merges a subset of ADSL onto itself,
-# so treatment assignment and analysis populations are defined exactly once and
-# can never disagree between two tables.
-#
-# Source SDTM: DM (demographics), EX (exposure), DS (disposition).
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Program    : 01_adsl.R
+# Study      : CDISCPILOT01 (public CDISC pilot test data, {pharmaversesdtm})
+# Purpose    : Create ADSL, the subject-level analysis dataset (one row per
+#              subject): treatment variables, treatment dates, disposition,
+#              population flags, pooled site and age groups
+# Inputs     : SDTM DM, EX, DS, SV, QS (via programs/00_setup.R)
+#              metadata/adsl_agegr1.csv, metadata/adsl_trt.csv
+# Outputs    : data/adam/adsl.rds
+# Author     : Ignacio G. Ribelles
+# Created    : 2026-09-16
+# Change log : 2026-09-16  IGR  Initial version
+#              2026-09-25  IGR  Standard header; comments condensed
+#              2026-09-25  IGR  Treatment variables missing for screen
+#                               failures; TRT01PN/TRT01AN, SITEGR1, RFENDT,
+#                               EFFFL and COMP24FL added; TRTEDT from the
+#                               end-of-study date when the last dose record
+#                               has no end date
+# Notes      : Derivation rules and data checks: docs/implementation-notes.md
+# -----------------------------------------------------------------------------
 
 source("programs/00_setup.R")
 
-# ===========================================================================
-# 1. Exposure: impute TIME only, never the date
-# ===========================================================================
-# derive_vars_dtm() builds a datetime (--DTM) from an ISO 8601 --DTC string.
-#
-# The defaults here are asymmetric and are a classic interview question:
-#   derive_vars_dt()  has highest_imputation = "n"  -> imputes NOTHING
-#   derive_vars_dtm() has highest_imputation = "h"  -> imputes TIME by default
-#
-# EXSTDTC in this study is a plain date ("2012-07-09") with no time component.
-# Leaving the default "h" means: keep the date exactly as collected, and fill the
-# missing clock time with 00:00:00 for the start and 23:59:59 for the end. That
-# is deliberate -- it makes "first dose" and "last dose" orderable without ever
-# inventing a date that was not observed.
-#
-# EXSTTMF / EXENTMF are the imputation FLAGS. A flag variable exists so a
-# reviewer can see which values were imputed and which were collected. That is
-# traceability: the imputation is visible in the data, not buried in the code.
+# =============================================================================
+# 1. Exposure datetimes
+# =============================================================================
+# EXSTDTC/EXENDTC are complete dates without time. Only the time is imputed
+# (00:00:00 start, 23:59:59 end), never the date; EXSTTMF/EXENTMF flag it.
 ex_ext <- ex %>%
   derive_vars_dtm(
     dtc = EXSTDTC,
@@ -40,21 +37,17 @@ ex_ext <- ex %>%
     time_imputation = "last"
   )
 
-# ===========================================================================
-# 2. Disposition: no imputation at all
-# ===========================================================================
-# DSSTDTC is complete (all 850 records are 10-character dates), so the default
-# highest_imputation = "n" is correct. If a partial date appeared, ADT would
-# become NA rather than silently guessing -- fail loudly, not quietly.
+# =============================================================================
+# 2. Disposition dates
+# =============================================================================
+# DSSTDTC is complete for all records, so no imputation.
 ds_ext <- ds %>%
   derive_vars_dt(
     dtc = DSSTDTC,
     new_vars_prefix = "DSST"
   )
 
-# Map the DS controlled terminology to the ADaM end-of-study status.
-# DSDECOD is CDISC controlled terminology; EOSSTT is ADaM controlled terminology.
-# They are different vocabularies, so an explicit mapping is required.
+# Map DS controlled terminology (DSDECOD) to ADaM EOSSTT.
 format_eosstt <- function(x) {
   case_when(
     x == "COMPLETED" ~ "COMPLETED",
@@ -63,40 +56,25 @@ format_eosstt <- function(x) {
   )
 }
 
-# ===========================================================================
+# =============================================================================
 # 3. Build ADSL
-# ===========================================================================
+# =============================================================================
 adsl <- dm %>%
-  select(-DOMAIN) %>% # DOMAIN is an SDTM housekeeping variable; ADaM has no use for it
+  select(-DOMAIN) %>%
 
-  # -- Treatment variables -------------------------------------------------
-  # TRT01P = PLANNED treatment for period 01, TRT01A = ACTUAL treatment.
-  #
-  # CAVEAT on this mapping: ARM/ACTARM are copied UNCONDITIONALLY, so the 52
-  # screen failures get TRT01P = TRT01A = "Screen Failure" -- a treatment-arm
-  # variable holding a non-treatment value. They were never randomised, so
-  # strictly nothing was "planned" for them. Sponsors differ on whether TRT01P
-  # should be null when ARMNRS is populated; this repo keeps the DM value and
-  # relies on ITTFL/SAFFL to exclude them. A real study fixes this in the spec.
-  # Both exist because efficacy is normally analysed as-randomised (ITT, planned)
-  # while safety is analysed as-treated (actual). In THIS study they differ for
-  # exactly 12 subjects: planned Xanomeline High Dose, actual Xanomeline Low Dose.
+  # -- Planned and actual treatment ----------------------------------------
+  # From ARM/ACTARM; missing for screen failures, who were never assigned a
+  # treatment. Numeric codes are the daily dose in mg (metadata/adsl_trt.csv).
   mutate(
-    TRT01P = ARM,
-    TRT01A = ACTARM
+    TRT01P  = if_else(ARMCD == "Scrnfail", NA_character_, ARM),
+    TRT01A  = if_else(ACTARMCD == "Scrnfail", NA_character_, ACTARM),
+    TRT01PN = adsl_trt$TRTN[match(TRT01P, adsl_trt$TRT)],
+    TRT01AN = adsl_trt$TRTN[match(TRT01A, adsl_trt$TRT)]
   ) %>%
 
-  # -- First dose ----------------------------------------------------------
-  # This is NOT a left_join. derive_vars_merged() cannot change the row count of
-  # its input: EX has up to 3 records per subject, and a dplyr::left_join() here
-  # would turn 306 rows into 643. The order + mode pair is the DEDUPLICATION
-  # rule -- "of all the qualifying EX records for this subject, take the first
-  # by EXSTDTM then EXSEQ". Omit `order` and admiral raises a hard error on
-  # duplicates rather than quietly picking one.
-  #
-  # filter_add encodes the definition of a dose that counts. EXDOSE > 0 is a real
-  # dose; the placebo arm is dosed at 0 mg by design, so a zero dose of PLACEBO
-  # must also count or every placebo subject would look untreated.
+  # -- First dose ------------------------------------------------------------
+  # A dose counts if EXDOSE > 0, or EXDOSE = 0 on placebo (placebo is 0 mg).
+  # order/mode select one EX record per subject; ties broken by EXSEQ.
   derive_vars_merged(
     dataset_add = ex_ext,
     by_vars     = exprs(STUDYID, USUBJID),
@@ -107,28 +85,22 @@ adsl <- dm %>%
     mode        = "first"
   ) %>%
 
-  # -- Last dose -----------------------------------------------------------
+  # -- Last dose -------------------------------------------------------------
+  # End of the last qualifying dose record (by start); missing if that record
+  # has no end date (completed below from the end-of-study date).
   derive_vars_merged(
     dataset_add = ex_ext,
     by_vars     = exprs(STUDYID, USUBJID),
     filter_add  = (EXDOSE > 0 | (EXDOSE == 0 & str_detect(EXTRT, "PLACEBO"))) &
-      !is.na(EXENDTM),
+      !is.na(EXSTDTM),
     new_vars    = exprs(TRTEDTM = EXENDTM, TRTETMF = EXENTMF),
-    order       = exprs(EXENDTM, EXSEQ),
+    order       = exprs(EXSTDTM, EXSEQ),
     mode        = "last"
   ) %>%
 
-  # -- Dates from datetimes ------------------------------------------------
-  # Analysis is by day, not by second. ADaM keeps BOTH: --DTM for ordering and
-  # --DT for analysis and display.
   derive_vars_dtm_to_dt(source_vars = exprs(TRTSDTM, TRTEDTM)) %>%
 
-  # -- Treatment duration --------------------------------------------------
-  # TRTDURD = TRTEDT - TRTSDT + 1. The "+1" is the clinical convention: a subject
-  # dosed and stopped on the same day was treated for 1 day, not 0.
-  derive_var_trtdurd() %>%
-
-  # -- Randomisation date --------------------------------------------------
+  # -- Randomisation date ----------------------------------------------------
   derive_vars_merged(
     dataset_add = ds_ext,
     by_vars     = exprs(STUDYID, USUBJID),
@@ -136,12 +108,9 @@ adsl <- dm %>%
     new_vars    = exprs(RANDDT = DSSTDT)
   ) %>%
 
-  # -- End of study --------------------------------------------------------
-  # Screen failures are excluded here: they have a DISPOSITION EVENT record with
-  # DSDECOD == "SCREEN FAILURE", but they never entered the study, so an
-  # end-of-study status is not meaningful for them. EOSDT/EOSSTT stay NA.
-  #
-  # new_vars can compute: format_eosstt(DSDECOD) is evaluated inside the merge.
+  # -- End of study ------------------------------------------------------------
+  # Not derived for screen failures (EOSDT/EOSSTT stay missing).
+  # DCSREAS is missing for subjects who completed.
   derive_vars_merged(
     dataset_add = ds_ext,
     by_vars     = exprs(STUDYID, USUBJID),
@@ -149,41 +118,37 @@ adsl <- dm %>%
     new_vars    = exprs(
       EOSDT   = DSSTDT,
       EOSSTT  = format_eosstt(DSDECOD),
-      # DCSREAS is "Reason for Discontinuation from Study". A subject who
-      # COMPLETED did not discontinue, so DCSREAS must be NULL for them --
-      # populating it with "COMPLETED" is a conformance error a validator flags,
-      # and it would corrupt any frequency table of discontinuation reasons.
       DCSREAS = if_else(DSDECOD == "COMPLETED", NA_character_, DSDECOD)
     ),
     order = exprs(DSSTDT, DSSEQ),
     mode  = "last"
   ) %>%
 
-  # -- Death ---------------------------------------------------------------
-  # DTHDTC is complete in this study, so nothing is imputed and DTHDTF is all NA.
-  # In a real study death dates are frequently partial (month/year only) and
-  # highest_imputation = "M" with a visible DTHDTF flag is the usual approach.
+  # -- Last dose date when the last dose record has no end date ----------------
+  # The end-of-study date is used, then the duration is derived.
+  mutate(TRTEDT = if_else(is.na(TRTEDT) & !is.na(TRTSDT), EOSDT, TRTEDT)) %>%
+
+  # TRTDURD = TRTEDT - TRTSDT + 1
+  derive_var_trtdurd() %>%
+
+  # -- Reference end date (end of study participation) -------------------------
+  derive_vars_dt(
+    dtc             = RFENDTC,
+    new_vars_prefix = "RFEN"
+  ) %>%
+
+  # -- Death date --------------------------------------------------------------
+  # Complete in this study; month/day imputation (flagged in DTHDTF) would
+  # apply to partial dates.
   derive_vars_dt(
     dtc             = DTHDTC,
     new_vars_prefix = "DTH",
     highest_imputation = "M"
   ) %>%
 
-  # -- Safety population flag ----------------------------------------------
-  # SAFFL: received at least one dose of study treatment.
-  #
-  # derive_var_merged_exist_flag() is THREE-valued, not two, and this is the
-  # subtle part. The three cases are:
-  #   true_value    -- the condition is TRUE for >=1 record in EX
-  #   false_value   -- the subject IS in EX but the condition is never TRUE
-  #   missing_value -- the subject is ABSENT from EX entirely (the 52 screen failures)
-  # Setting false_value and missing_value both to "N" deliberately collapses
-  # "in EX but never dosed" and "never in EX" into a single N.
-  #
-  # TOY-DATA CAVEAT: in THIS study only the third case occurs. All 254 subjects
-  # present in EX satisfy the condition, so the false_value branch has ZERO
-  # instances and all 52 "N" values come from missing_value. The three-way
-  # distinction is real and worth knowing, but this data does not exercise it.
+  # -- Safety population -------------------------------------------------------
+  # Y = at least one qualifying dose. Subjects never in EX (screen failures)
+  # get "N" through missing_value.
   derive_var_merged_exist_flag(
     dataset_add   = ex,
     by_vars       = exprs(STUDYID, USUBJID),
@@ -193,33 +158,50 @@ adsl <- dm %>%
     missing_value = "N"
   ) %>%
 
-  # -- Intent-to-treat flag ------------------------------------------------
-  # There is NO admiral function for this, on purpose. admiral's documented
-  # position is that population flags are company- and study-specific, so only
-  # SAFFL ships in the template. Every other population flag is hand-written
-  # against the Statistical Analysis Plan.
-  #
-  # ITTFL here = "randomised", which in this study means "not a screen failure".
-  # ITT is analysed AS RANDOMISED, which is why it keys off ARMCD (planned), not
-  # ACTARMCD (actual). That distinction is the whole point of the ITT principle.
+  # -- Intent-to-treat population ----------------------------------------------
+  # Y = randomised, i.e. assigned to a planned arm other than screen failure.
   mutate(
     ITTFL = if_else(!is.na(ARMCD) & ARMCD != "Scrnfail", "Y", "N")
   ) %>%
 
-  # -- Age grouping --------------------------------------------------------
-  # The CUT POINTS THEMSELVES come from metadata/adsl_agegr1.csv (AGE_LOW /
-  # AGE_HIGH), not just the labels. That distinction matters: if the cut points
-  # were literals in a case_when here and the CSV only supplied label strings,
-  # the spec would be decorative and could silently disagree with the code.
-  # Changing a band now means editing the CSV alone.
-  #
-  # AGEGR1N exists because tables need a sort order that is not alphabetical
-  # ("<65" must precede "65-80", which sorts after it). Paired --GR1/--GR1N
-  # variables are an ADaM convention.
-  #
-  # NA handling is explicit. A bare `TRUE ~ 3` fall-through would silently put a
-  # subject with missing AGE into the oldest band. AGE is complete in this study
-  # (306/306, range 50-89), so this branch never fires here -- it is defensive.
+  # -- Efficacy population -----------------------------------------------------
+  # Y = in the safety population with at least one post-baseline (VISITNUM > 3)
+  # ADAS-Cog and at least one post-baseline CIBIC+ assessment.
+  derive_var_merged_exist_flag(
+    dataset_add   = qs,
+    by_vars       = exprs(STUDYID, USUBJID),
+    new_var       = ADASPBFL,
+    condition     = QSCAT == "ALZHEIMER'S DISEASE ASSESSMENT SCALE" & VISITNUM > 3
+  ) %>%
+  derive_var_merged_exist_flag(
+    dataset_add   = qs,
+    by_vars       = exprs(STUDYID, USUBJID),
+    new_var       = CIBCPBFL,
+    condition     = QSCAT == "CLINICIAN'S INTERVIEW-BASED IMPRESSION OF CHANGE (CIBIC+)" &
+      VISITNUM > 3
+  ) %>%
+  mutate(
+    EFFFL = if_else(SAFFL == "Y" & ADASPBFL %in% "Y" & CIBCPBFL %in% "Y", "Y", "N")
+  ) %>%
+  select(-ADASPBFL, -CIBCPBFL) %>%
+
+  # -- Week 24 completers ------------------------------------------------------
+  # Y = the Week 24 visit (SV VISITNUM 12) took place on or before the end of
+  # study participation.
+  derive_vars_merged(
+    dataset_add = derive_vars_dt(sv, dtc = SVSTDTC, new_vars_prefix = "SVST"),
+    by_vars     = exprs(STUDYID, USUBJID),
+    filter_add  = VISITNUM == 12,
+    new_vars    = exprs(WK24DT = SVSTDT)
+  ) %>%
+  mutate(
+    COMP24FL = if_else(!is.na(WK24DT) & !is.na(RFENDT) & RFENDT >= WK24DT, "Y", "N")
+  ) %>%
+  select(-WK24DT) %>%
+
+  # -- Age groups --------------------------------------------------------------
+  # Cut points and labels from metadata/adsl_agegr1.csv. Missing AGE gives
+  # missing AGEGR1/AGEGR1N rather than a default band.
   mutate(
     AGEGR1N = {
       idx <- vapply(
@@ -236,9 +218,24 @@ adsl <- dm %>%
     AGEGR1 = adsl_agegr1$AGEGR1[match(AGEGR1N, adsl_agegr1$AGEGR1N)]
   )
 
-# ===========================================================================
+# -- Pooled site ----------------------------------------------------------------
+# A site is pooled into "900" when any planned arm has fewer than 3 ITT
+# subjects there; otherwise SITEGR1 = SITEID. Used as a model covariate.
+small_sites <- adsl %>%
+  filter(ITTFL == "Y") %>%
+  count(SITEID, TRT01P) %>%
+  tidyr::complete(SITEID, TRT01P, fill = list(n = 0L)) %>%
+  group_by(SITEID) %>%
+  summarise(pooled = any(n < 3), .groups = "drop") %>%
+  filter(pooled) %>%
+  pull(SITEID)
+
+adsl <- adsl %>%
+  mutate(SITEGR1 = if_else(SITEID %in% small_sites, "900", SITEID))
+
+# =============================================================================
 # 4. Save
-# ===========================================================================
+# =============================================================================
 saveRDS(adsl, file.path(adam_dir, "adsl.rds"))
 
 message("ADSL: ", nrow(adsl), " rows x ", ncol(adsl), " columns")
