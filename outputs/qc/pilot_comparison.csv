@@ -1,0 +1,69 @@
+dataset,item,compared,differences,expected_differences,explanation,status
+ADSL,(records only in ours),254,0,0,,match
+ADSL,(records only in pilot),254,0,0,,match
+ADSL,SITEID,254,0,0,,match
+ADSL,SITEGR1,254,0,0,,match
+ADSL,AGE,254,0,0,,match
+ADSL,AGEGR1,254,0,0,,match
+ADSL,AGEGR1N,254,0,0,,match
+ADSL,SEX,254,0,0,,match
+ADSL,RACE,254,0,0,,match
+ADSL,TRT01P,254,0,0,,match
+ADSL,TRT01PN,254,0,0,,match
+ADSL,TRT01A,254,12,12,Actual treatment from DM.ACTARM (12 subjects randomised to high dose received low dose); the pilot sets TRT01A = TRT01P.,explained
+ADSL,TRT01AN,254,12,12,Follows TRT01A.,explained
+ADSL,TRTSDT,254,0,0,,match
+ADSL,TRTEDT,254,0,0,,match
+ADSL,TRTDUR,254,0,0,,match
+ADSL,SAFFL,254,0,0,,match
+ADSL,ITTFL,254,0,0,,match
+ADSL,EFFFL,254,0,0,,match
+ADSL,COMP24FL,254,0,0,,match
+ADAE,(records only in ours),1191,0,0,,match
+ADAE,(records only in pilot),1191,0,0,,match
+ADAE,TRTA,1191,19,19,Follows ADSL.TRT01A: the 19 events of the 12 subjects whose actual treatment differs.,explained
+ADAE,TRTAN,1191,19,19,Follows TRTA.,explained
+ADAE,ASTDT,1191,11,11,Year-only onset dates are imputed to 1 January (ASTDTF = 'M'); the pilot leaves them missing.,explained
+ADAE,ASTDTF,1191,11,11,Follows ASTDT: 'M' for the 11 year-only dates.,explained
+ADAE,AENDT,1191,0,0,,match
+ADAE,ASTDY,1191,11,11,Follows ASTDT.,explained
+ADAE,AENDY,1191,0,0,,match
+ADAE,ADURN,1191,4,4,Duration is computed when the start day was imputed (subject 01-716-1418); the pilot leaves it missing. ASTDTF identifies these records.,explained
+ADAE,TRTEMFL,1191,0,0,,match
+ADAE,AOCCFL,1191,0,0,,match
+ADAE,AOCCSFL,1191,0,0,,match
+ADAE,AOCCPFL,1191,0,0,,match
+ADAE,CQ01NAM,1191,0,0,,match
+ADAE,AOCC01FL,1191,0,0,,match
+ADLB,(records only in ours),9079,12,12,"Every LB record of the five parameters is kept; the pilot omits 12 records of 4 subjects at AMBUL ECG REMOVAL, RETRIEVAL and one BASELINE visit.",explained
+ADLB,(records only in pilot),9067,0,0,,match
+ADLB,ADT,9067,0,0,,match
+ADLB,ADY,9067,0,0,,match
+ADLB,AVAL,9067,0,0,,match
+ADLB,ABLFL,9067,226,226,"Baseline is the last non-missing value on or before first dose; the pilot uses the SDTM baseline flag (LBBLFL, SCREENING 1).",explained
+ADLB,BASE,9067,773,773,"Follows ABLFL: a different baseline record gives a different BASE, including 15 subject-parameters without an SDTM baseline flag.",explained
+ADLB,CHG,9067,706,706,"Follows BASE, and CHG is only derived after first dose; the pilot also derives it on pre-dose records.",explained
+ADLB,ANRIND,9067,437,437,ANRIND compares AVAL with the normal range (ANRLO/ANRHI); the pilot reports 'N' for 432 values outside that range and for the 5 values below the limit of quantification.,explained
+ADLB,BNRIND,9067,568,568,Follows ABLFL and ANRIND.,explained
+ADTTE,(records only in ours),254,0,0,,match
+ADTTE,(records only in pilot),254,0,0,,match
+ADTTE,TRTA,254,12,12,Follows ADSL.TRT01A.,explained
+ADTTE,TRTAN,254,12,12,Follows TRTA.,explained
+ADTTE,STARTDT,254,0,0,,match
+ADTTE,ADT,254,0,0,,match
+ADTTE,AVAL,254,0,0,,match
+ADTTE,CNSR,254,0,0,,match
+ADTTE,SRCSEQ,254,0,0,,match
+ADQSADAS,(records only in ours),1016,0,0,,match
+ADQSADAS,(records only in pilot),1016,0,0,,match
+ADQSADAS,ADT,1016,33,33,"LOCF records carry the date of the analysed record whose value is carried; the pilot gives the date of a later, non-analysed record in the earlier window. AVAL is identical.",explained
+ADQSADAS,ADY,1016,33,33,Follows ADT.,explained
+ADQSADAS,AVAL,1016,0,0,,match
+ADQSADAS,BASE,1016,0,0,,match
+ADQSADAS,CHG,1016,0,0,,match
+ADQSADAS,ABLFL,1016,0,0,,match
+ADQSADAS,DTYPE,1016,0,0,,match
+ADQSADAS,QSSEQ,1016,33,33,Follows ADT.,explained
+ADQSADAS,EFFFL,1016,0,0,,match
+ADQSADAS,COMP24FL,1016,0,0,,match
+ADQSADAS,(LOCF records all),222,19,19,"The pilot additionally marks 19 non-analysed records (a second record in the same window, ANL01FL missing) as DTYPE = 'LOCF'.",explained

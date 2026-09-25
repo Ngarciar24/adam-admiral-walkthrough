@@ -3,13 +3,15 @@
 # Study      : CDISCPILOT01 (public CDISC pilot test data, {pharmaversesdtm})
 # Purpose    : Create ADAE (OCCDS, one row per collected adverse event):
 #              analysis dates with imputation flags, study days, duration,
-#              treatment-emergent flag and occurrence flags
+#              treatment-emergent flag, dermatologic customised query and
+#              occurrence flags
 # Inputs     : SDTM AE (via programs/00_setup.R); data/adam/adsl.rds
 # Outputs    : data/adam/adae.rds
 # Author     : Ignacio G. Ribelles
 # Created    : 2026-09-16
 # Change log : 2026-09-16  IGR  Initial version
 #              2026-09-25  IGR  Standard header; comments condensed
+#              2026-09-25  IGR  TRTA/TRTAN, CQ01NAM and AOCC01FL added
 # Notes      : Source date profile (checked before writing the imputation):
 #              AESTDTC: 1165 complete, 15 year-month, 11 year-only, 0 missing.
 #              AEENDTC: 718 complete, 473 missing, no partial dates.
@@ -29,7 +31,13 @@ adae <- ae %>%
   derive_vars_merged(
     dataset_add = adsl,
     by_vars     = exprs(STUDYID, USUBJID),
-    new_vars    = exprs(TRT01P, TRT01A, TRTSDT, TRTEDT, SAFFL, AGEGR1, SEX)
+    new_vars    = exprs(TRT01P, TRT01A, TRT01AN, TRTSDT, TRTEDT, SAFFL, AGEGR1, SEX)
+  ) %>%
+
+  # Safety analyses are by actual treatment.
+  mutate(
+    TRTA  = TRT01A,
+    TRTAN = TRT01AN
   ) %>%
 
   # =============================================================================
@@ -111,7 +119,23 @@ adae <- ae %>%
   ) %>%
 
   # =============================================================================
-  # 7. Occurrence flags
+  # 7. Dermatologic events (adverse events of special interest)
+  # =============================================================================
+  # Customised query as defined for the pilot study: preferred terms containing
+  # APPLICATION, DERMATITIS, ERYTHEMA or BLISTER, or any term in the skin SOC
+  # except cold sweat, hyperhidrosis and alopecia.
+  mutate(
+    CQ01NAM = if_else(
+      str_detect(AEDECOD, "APPLICATION|DERMATITIS|ERYTHEMA|BLISTER") |
+        (AEBODSYS == "SKIN AND SUBCUTANEOUS TISSUE DISORDERS" &
+           !AEDECOD %in% c("COLD SWEAT", "HYPERHIDROSIS", "ALOPECIA")),
+      "DERMATOLOGIC EVENTS",
+      NA_character_
+    )
+  ) %>%
+
+  # =============================================================================
+  # 8. Occurrence flags
   # =============================================================================
   # First treatment-emergent event per subject (AOCCFL), per subject and SOC
   # (AOCCSFL), and per subject, SOC and PT (AOCCPFL), so incidence tables
@@ -146,9 +170,21 @@ adae <- ae %>%
     ),
     filter = TRTEMFL == "Y"
   ) %>%
+  # First treatment-emergent dermatologic event per subject (source of the
+  # ADTTE event).
+  restrict_derivation(
+    derivation = derive_var_extreme_flag,
+    args = params(
+      by_vars = exprs(STUDYID, USUBJID),
+      order   = exprs(ASTDT, AESEQ),
+      new_var = AOCC01FL,
+      mode    = "first"
+    ),
+    filter = TRTEMFL == "Y" & CQ01NAM == "DERMATOLOGIC EVENTS"
+  ) %>%
 
   # =============================================================================
-  # 8. Sequence number and sort order
+  # 9. Sequence number and sort order
   # =============================================================================
   # ASEQ follows onset order and differs from AESEQ (collection order).
   derive_var_obs_number(
@@ -159,28 +195,28 @@ adae <- ae %>%
   arrange(STUDYID, USUBJID, ASTDT, AESEQ) %>%
 
   # =============================================================================
-  # 9. Variable order
+  # 10. Variable order
   # =============================================================================
   # Coded terms: AEDECOD = MedDRA preferred term, AEBODSYS = primary SOC.
   # SDTM variables at the end are kept for traceability back to AE.
   select(
     # -- keys and subject-level context
     STUDYID, USUBJID, ASEQ,
-    TRT01P, TRT01A, TRTSDT, TRTEDT, SAFFL, AGEGR1, SEX,
-    # -- coded terms
-    AETERM, AEDECOD, AEBODSYS,
+    TRTA, TRTAN, TRT01P, TRT01A, TRTSDT, TRTEDT, SAFFL, AGEGR1, SEX,
+    # -- coded terms and customised query
+    AETERM, AEDECOD, AEBODSYS, CQ01NAM,
     # -- timing
     ASTDT, ASTDTF, ASTDY, AENDT, AENDY, ADY, ADURN, ADURU,
     # -- severity, seriousness, causality, outcome
     ASEV, ASEVN, AESEV, AESER, AREL, AEREL, AEOUT,
     # -- analysis flags
-    TRTEMFL, AOCCFL, AOCCSFL, AOCCPFL,
+    TRTEMFL, AOCCFL, AOCCSFL, AOCCPFL, AOCC01FL,
     # -- traceability to SDTM AE
     AESEQ, AESTDTC, AEENDTC, AESTDY, AEENDY
   )
 
 # =============================================================================
-# 10. Save
+# 11. Save
 # =============================================================================
 saveRDS(adae, file.path(adam_dir, "adae.rds"))
 

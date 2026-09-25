@@ -1,4 +1,6 @@
-dataset,label
-ADSL,Subject-Level Analysis Dataset
-ADLB,Laboratory Test Results Analysis Dataset
-ADAE,Adverse Events Analysis Dataset
+dataset,label,class,structure,keys
+ADSL,Subject-Level Analysis Dataset,SUBJECT LEVEL ANALYSIS DATASET,One record per subject,"STUDYID, USUBJID"
+ADLB,Laboratory Test Results Analysis Dataset,BASIC DATA STRUCTURE,One record per subject per parameter per analysis date per source record,"STUDYID, USUBJID, PARAMCD, ADT, LBSEQ"
+ADAE,Adverse Events Analysis Dataset,OCCURRENCE DATA STRUCTURE,One record per subject per adverse event,"STUDYID, USUBJID, AESEQ"
+ADTTE,Time-to-Event Analysis Dataset,BASIC DATA STRUCTURE,One record per subject per parameter,"STUDYID, USUBJID, PARAMCD"
+ADQSADAS,ADAS-Cog Analysis Dataset,BASIC DATA STRUCTURE,One record per subject per parameter per analysis visit per analysis date,"STUDYID, USUBJID, PARAMCD, AVISITN, ADT, DTYPE"

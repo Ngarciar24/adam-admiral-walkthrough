@@ -10,6 +10,8 @@
 # Created    : 2026-09-16
 # Change log : 2026-09-16  IGR  Initial version
 #              2026-09-25  IGR  Standard header; comments condensed
+#              2026-09-25  IGR  Counts after the last-dose rule change;
+#                               CQ01NAM, AOCC01FL and TRTA tests added
 # -----------------------------------------------------------------------------
 
 library(testthat)
@@ -98,7 +100,7 @@ test_that("TRTEMFL takes only 'Y' or NA", {
   # "Y" or NA by design (NA: not emergent or not determinable). Downstream
   # code filters on TRTEMFL == "Y", never != "N".
   expect_setequal(unique(adae$TRTEMFL), c("Y", NA))
-  expect_equal(sum(adae$TRTEMFL == "Y", na.rm = TRUE), 1122L)
+  expect_equal(sum(adae$TRTEMFL == "Y", na.rm = TRUE), 1126L)
 })
 
 test_that("no event with a COLLECTED onset before first dose is treatment-emergent", {
@@ -108,20 +110,20 @@ test_that("no event with a COLLECTED onset before first dose is treatment-emerge
 })
 
 test_that("the non-emergent records are non-emergent for a stated reason", {
-  # The 69 unflagged records split exactly into onset before first dose (65)
-  # and onset more than 30 days after last dose (4).
+  # All 65 unflagged records have onset before first dose; no onset falls
+  # more than 30 days after last dose in this study.
   nonte <- adae %>% filter(is.na(TRTEMFL))
-  expect_equal(nrow(nonte), 69L)
+  expect_equal(nrow(nonte), 65L)
   expect_true(all(nonte$ASTDT < nonte$TRTSDT | nonte$ASTDT > nonte$TRTEDT + 30))
   expect_equal(sum(nonte$ASTDT < nonte$TRTSDT), 65L)
-  expect_equal(sum(nonte$ASTDT > nonte$TRTEDT + 30), 4L)
+  expect_equal(sum(nonte$ASTDT > nonte$TRTEDT + 30), 0L)
 })
 
 test_that("every treatment-emergent event belongs to a safety-population subject", {
   # A treatment-emergent event implies a dosed subject (SAFFL = "Y").
   te <- adae %>% filter(TRTEMFL == "Y")
   expect_true(all(te$SAFFL == "Y"))
-  expect_equal(n_distinct(te$USUBJID), 217L)
+  expect_equal(n_distinct(te$USUBJID), 218L)
 })
 
 # ===========================================================================
@@ -147,6 +149,35 @@ test_that("occurrence flags never land on a non-emergent record", {
     group_by(USUBJID) %>%
     summarise(ok = ASTDT[which(AOCCFL == "Y")] == min(ASTDT), .groups = "drop")
   expect_true(all(chk$ok))
+})
+
+# ===========================================================================
+# Dermatologic events and actual treatment
+# ===========================================================================
+test_that("CQ01NAM follows the customised query definition", {
+  derm <- grepl("APPLICATION|DERMATITIS|ERYTHEMA|BLISTER", adae$AEDECOD) |
+    (adae$AEBODSYS == "SKIN AND SUBCUTANEOUS TISSUE DISORDERS" &
+       !adae$AEDECOD %in% c("COLD SWEAT", "HYPERHIDROSIS", "ALOPECIA"))
+  expect_equal(!is.na(adae$CQ01NAM), derm)
+  expect_setequal(na.omit(adae$CQ01NAM), "DERMATOLOGIC EVENTS")
+  expect_equal(sum(derm), 493L)
+})
+
+test_that("AOCC01FL marks the first treatment-emergent dermatologic event per subject", {
+  te_derm <- adae %>% filter(TRTEMFL == "Y", !is.na(CQ01NAM))
+  expect_equal(sum(adae$AOCC01FL == "Y", na.rm = TRUE), n_distinct(te_derm$USUBJID))
+  expect_true(all(is.na(adae$AOCC01FL[is.na(adae$CQ01NAM) | is.na(adae$TRTEMFL)])))
+  first <- te_derm %>% arrange(USUBJID, ASTDT, AESEQ) %>% distinct(USUBJID, .keep_all = TRUE)
+  expect_setequal(paste(first$USUBJID, first$AESEQ),
+                  with(filter(adae, AOCC01FL == "Y"), paste(USUBJID, AESEQ)))
+  expect_equal(nrow(first), 152L)
+})
+
+test_that("TRTA/TRTAN are the subject's actual treatment from ADSL", {
+  chk <- adae %>% left_join(adsl %>% select(USUBJID, TRT01A, TRT01AN), by = "USUBJID",
+                            suffix = c("", ".adsl"))
+  expect_equal(chk$TRTA, chk$TRT01A.adsl)
+  expect_equal(chk$TRTAN, chk$TRT01AN)
 })
 
 # ===========================================================================

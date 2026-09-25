@@ -13,6 +13,7 @@
 # Created    : 2026-09-16
 # Change log : 2026-09-16  IGR  Initial version
 #              2026-09-25  IGR  Standard header; comments condensed
+#              2026-09-25  IGR  Table 2 restricted to post-baseline records
 # Notes      : No derivation is done here; every cell is a filter and summary of
 #              existing ADaM columns. Packages: {rtables} for layout, {tern} for
 #              the standard statistics.
@@ -94,27 +95,24 @@ tbl_t1 <- build_table(lyt_t1, adsl_itt)
 #            (safety population)
 # =============================================================================
 # AVAL, BASE and CHG are read from the same ADLB row, so no join to the
-# baseline record is needed.
-#
-# There is no separate baseline visit: 230 of the 254 ALT baselines are at
-# SCREENING 1 and 24 at unscheduled visits. The 22 SCREENING 1 records that
-# are not the baseline carry a non-zero CHG, so Mean CHG at SCREENING 1 is
-# near, not exactly, 0.
+# baseline record is needed. CHG exists only after first dose, so the table
+# shows post-baseline visits; the baseline mean appears as Mean BASE.
 
 # Visit order from AVISITN.
 visit_order <- adlb %>%
-  filter(PARAMCD == "ALT", AVISIT != "UNSCHEDULED") %>%
+  filter(PARAMCD == "ALT", AVISIT != "UNSCHEDULED", ADT > TRTSDT) %>%
   distinct(AVISIT, AVISITN) %>%
   arrange(AVISITN) %>%
   pull(AVISIT)
 
-# Analysis subset: ALT, safety population, scheduled visits. (SAFFL removes
-# no rows in this study: every subject with labs was dosed.)
+# Analysis subset: ALT, safety population, scheduled post-baseline visits.
+# (SAFFL removes no rows in this study: every subject with labs was dosed.)
 adlb_alt <- adlb %>%
   filter(
     PARAMCD == "ALT",
     SAFFL   == "Y",
-    AVISIT  != "UNSCHEDULED"
+    AVISIT  != "UNSCHEDULED",
+    ADT     >  TRTSDT
   ) %>%
   mutate(
     TRT01P = factor(TRT01P, levels = trt_levels),
@@ -159,7 +157,7 @@ lyt_t2 <- basic_table(
   title = "Table 2. Alanine Aminotransferase (U/L): Observed Value and Change from Baseline by Visit",
   subtitles = c(
     "Safety Population (SAFFL = 'Y'); PARAMCD = 'ALT'",
-    "Unscheduled visits excluded"
+    "Post-baseline records (ADT after first dose); unscheduled visits excluded"
   ),
   main_footer = c(
     "BASE = value at the ABLFL='Y' record; CHG = AVAL - BASE, both taken directly from ADLB.",
@@ -212,8 +210,7 @@ print(tbl_t2)
 # Traceability: one Table 2 cell back to its SDTM record
 # =============================================================================
 # Table cell -> ADLB row (USUBJID + ASEQ) -> SDTM LB row (USUBJID + LBSEQ).
-# Origins printed are those a define.xml would record; no define.xml is
-# generated yet.
+# Origins printed match data/adam/define.xml.
 trace_cell_visit <- "WEEK 8"
 trace_cell_arm   <- "Xanomeline High Dose"
 

@@ -2,10 +2,10 @@
 Program    : check_adam.py
 Study      : CDISCPILOT01 (public CDISC pilot test data, {pharmaversesdtm})
 Purpose    : Independent re-check of the ADaM transport files in Python:
-             structural checks on ADLB, one Table 2 cell reproduced, and the
-             ADAE treatment-emergent flag re-derived from the dates in the file
-             and compared with the R result row by row
-Inputs     : data/adam/adlb.xpt, data/adam/adae.xpt,
+             structural checks on ADLB, one Table 2 cell reproduced, the ADAE
+             treatment-emergent flag and the ADTTE event/censoring times
+             re-derived from the files and compared with the R results
+Inputs     : data/adam/adsl.xpt, adlb.xpt, adae.xpt, adtte.xpt,
              outputs/t2_alt_change_by_visit.csv
 Outputs    : Console report; exit status 1 if any check fails
 Usage      : python3 python/check_adam.py   (from the project root; needs pandas)
@@ -13,13 +13,25 @@ Author     : Ignacio G. Ribelles
 Created    : 2026-09-17
 Change log : 2026-09-17  IGR  Initial version
              2026-09-25  IGR  Standard header
+             2026-09-25  IGR  Exact zeros restored on read; ADTTE re-derived
 """
 from pathlib import Path
 import sys
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
-adlb = pd.read_sas(ROOT / "data/adam/adlb.xpt", format="xport", encoding="latin-1")
+
+
+def read_xpt(name):
+    df = pd.read_sas(ROOT / f"data/adam/{name}.xpt", format="xport", encoding="latin-1")
+    # pandas decodes an IBM-float zero as ~5.4e-79; restore exact zeros so that
+    # checks such as "ADY never 0" test something.
+    num = df.select_dtypes("number").columns
+    df[num] = df[num].mask(df[num].abs() < 1e-70, 0.0)
+    return df
+
+
+adlb = read_xpt("adlb")
 
 failures = []
 def check(name, ok, detail=""):
@@ -57,7 +69,7 @@ check("Table 2 cell WEEK 8 / High Dose / Mean CHG reproduced by pandas",
       abs(mean_chg - r_value) < 1e-9, f"pandas {mean_chg} vs rtables {r_value} (n = {sub['CHG'].notna().sum()})")
 
 # 6. ADAE: re-derive TRTEMFL from the dates in the file and compare
-#    Rule (README "Choices made here", programs/03_adae.R section 6): an event
+#    Rule (docs/sap.md section 7, programs/03_adae.R section 6): an event
 #    is treatment-emergent when its onset is on or after first dose and no more
 #    than 30 days after last dose. admiral returns "Y" or missing, never "N";
 #    an event that ENDED before first dose is not emergent even if its onset is
@@ -65,7 +77,7 @@ check("Table 2 cell WEEK 8 / High Dose / Mean CHG reproduced by pandas",
 #    is counted. Both branches mirror derive_var_trtemfl().
 #    pd.read_sas() leaves XPT dates as plain SAS day counts (days since
 #    1960-01-01), so the 30-day window is an addition of 30, not a Timedelta.
-adae = pd.read_sas(ROOT / "data/adam/adae.xpt", format="xport", encoding="latin-1")
+adae = read_xpt("adae")
 
 def trtemfl(row):
     st, en, ts, te = row["ASTDT"], row["AENDT"], row["TRTSDT"], row["TRTEDT"]
@@ -94,6 +106,24 @@ check("AOCCFL == 'Y' once per subject with a treatment-emergent AE",
       f"{n_subj_te} subjects")
 check("AOCCFL rows are treatment-emergent",
       (adae.loc[adae["AOCCFL"] == "Y", "TRTEMFL"] == "Y").all())
+
+# 8. ADTTE: re-derive time to first dermatologic event from ADAE and ADSL
+#    Event: first ADAE record with TRTEMFL = "Y" and CQ01NAM populated (by
+#    ASTDT, then AESEQ); otherwise censored at RFENDT. AVAL = ADT - TRTSDT + 1.
+adsl = read_xpt("adsl")
+adtte = read_xpt("adtte")
+saf = adsl[adsl["SAFFL"] == "Y"][["USUBJID", "TRTSDT", "RFENDT"]]
+ev = (adae[(adae["TRTEMFL"] == "Y") & (adae["CQ01NAM"] != "")]
+      .sort_values(["USUBJID", "ASTDT", "AESEQ"]).drop_duplicates("USUBJID")[["USUBJID", "ASTDT"]])
+exp = saf.merge(ev, on="USUBJID", how="left")
+exp["ADT_EXP"] = exp["ASTDT"].fillna(exp["RFENDT"])
+exp["CNSR_EXP"] = exp["ASTDT"].isna().astype(int)
+exp["AVAL_EXP"] = exp["ADT_EXP"] - exp["TRTSDT"] + 1
+m = adtte.merge(exp, on="USUBJID", how="outer", indicator=True)
+check("ADTTE has one record per safety subject", (m["_merge"] == "both").all(), f"{len(adtte)} records")
+check("ADTTE ADT, CNSR and AVAL re-derived in pandas match R on every subject",
+      ((m["ADT"] == m["ADT_EXP"]) & (m["CNSR"] == m["CNSR_EXP"]) & (m["AVAL"] == m["AVAL_EXP"])).all(),
+      f"{int((m['CNSR'] == 0).sum())} events, {int((m['CNSR'] == 1).sum())} censored")
 
 if failures:
     print(f"\n{len(failures)} check(s) failed: {failures}")

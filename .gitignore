@@ -12,6 +12,8 @@ renv/staging/
 .Rproj.user/
 # derived data (reproducible from run_all.R)
 data/adam/*.rds
+# downloaded, checksum-verified pilot files (R/pilot_files.R)
+data/external/
 
 # ...but NOT the SAS transport files. data/adam/*.xpt is the submission
 # artifact -- the thing that would actually be shipped to the agency -- so it is

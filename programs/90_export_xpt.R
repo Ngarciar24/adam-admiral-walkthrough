@@ -1,18 +1,20 @@
 # -----------------------------------------------------------------------------
 # Program    : 90_export_xpt.R
 # Study      : CDISCPILOT01 (public CDISC pilot test data, {pharmaversesdtm})
-# Purpose    : Export ADSL, ADLB and ADAE as SAS Transport v5 (.xpt) with
+# Purpose    : Export all ADaM datasets as SAS Transport v5 (.xpt) with
 #              attributes from the specification; check spec coverage and
 #              XPT v5 limits before writing; verify each file by reading it back
-# Inputs     : data/adam/adsl.rds, adlb.rds, adae.rds
+# Inputs     : data/adam/adsl.rds, adlb.rds, adae.rds, adtte.rds, adqsadas.rds
 #              metadata/adam_spec.csv (variable level)
 #              metadata/adam_datasets.csv (dataset level)
-# Outputs    : data/adam/adsl.xpt, adlb.xpt, adae.xpt
+# Outputs    : data/adam/adsl.xpt, adlb.xpt, adae.xpt, adtte.xpt, adqsadas.xpt
 # Author     : Ignacio G. Ribelles
 # Created    : 2026-09-16
 # Change log : 2026-09-16  IGR  Initial version (ADSL, ADLB)
 #              2026-09-17  IGR  ADAE added
 #              2026-09-25  IGR  Standard header; comments condensed
+#              2026-09-25  IGR  ADTTE and ADQSADAS added; spec carries define
+#                               metadata (extra columns ignored here)
 # Notes      : XPT v5 limits: names <= 8 chars, labels <= 40 chars ASCII,
 #              character values <= 200 bytes, dataset label <= 40 chars,
 #              file name stem <= 8 chars. The .xpt header carries a creation
@@ -28,6 +30,8 @@ library(haven)
 adsl <- readRDS(file.path(adam_dir, "adsl.rds"))
 adlb <- readRDS(file.path(adam_dir, "adlb.rds"))
 adae <- readRDS(file.path(adam_dir, "adae.rds"))
+adtte    <- readRDS(file.path(adam_dir, "adtte.rds"))
+adqsadas <- readRDS(file.path(adam_dir, "adqsadas.rds"))
 
 spec_path    <- "metadata/adam_spec.csv"
 dsspec_path  <- "metadata/adam_datasets.csv"
@@ -74,27 +78,32 @@ if (!file.exists(spec_path)) {
           "Labels must now be curated by hand before this is a real spec.")
   write_csv(
     rbind(build_spec_draft(adsl, "ADSL"), build_spec_draft(adlb, "ADLB"),
-          build_spec_draft(adae, "ADAE")),
+          build_spec_draft(adae, "ADAE"), build_spec_draft(adtte, "ADTTE"),
+          build_spec_draft(adqsadas, "ADQSADAS")),
     spec_path,
     na = ""
   )
 }
 
 # Column types are fixed so that format is never guessed as logical and
-# order sorts numerically.
+# order sorts numerically. Only the columns xportr uses are kept; the define
+# metadata columns are read by 94_define.R.
 adam_spec <- read_csv(
   spec_path,
   col_types = cols(
     dataset = col_character(), variable = col_character(), label = col_character(),
     type = col_character(), length = col_integer(), order = col_integer(),
-    format = col_character()
+    format = col_character(), .default = col_character()
   )
-)
+) %>%
+  select(dataset, variable, label, type, length, order, format)
 
 adam_datasets <- read_csv(
   dsspec_path,
-  col_types = cols(dataset = col_character(), label = col_character())
-)
+  col_types = cols(dataset = col_character(), label = col_character(),
+                   .default = col_character())
+) %>%
+  select(dataset, label)
 
 # =============================================================================
 # 2. Spec coverage
@@ -116,6 +125,8 @@ check_spec_covers <- function(d, dataset_name) {
 check_spec_covers(adsl, "ADSL")
 check_spec_covers(adlb, "ADLB")
 check_spec_covers(adae, "ADAE")
+check_spec_covers(adtte, "ADTTE")
+check_spec_covers(adqsadas, "ADQSADAS")
 
 # =============================================================================
 # 3. XPT v5 constraint audit
@@ -161,6 +172,8 @@ audit_xpt_constraints <- function(d, dataset_name) {
 audit_xpt_constraints(adsl, "ADSL")
 audit_xpt_constraints(adlb, "ADLB")
 audit_xpt_constraints(adae, "ADAE")
+audit_xpt_constraints(adtte, "ADTTE")
+audit_xpt_constraints(adqsadas, "ADQSADAS")
 
 # =============================================================================
 # 4. Write the transport files
@@ -208,6 +221,8 @@ export_xpt <- function(d, dataset_name) {
 adsl_xpt <- export_xpt(adsl, "ADSL")
 adlb_xpt <- export_xpt(adlb, "ADLB")
 adae_xpt <- export_xpt(adae, "ADAE")
+adtte_xpt    <- export_xpt(adtte, "ADTTE")
+adqsadas_xpt <- export_xpt(adqsadas, "ADQSADAS")
 
 # =============================================================================
 # 5. Round-trip verification
@@ -336,5 +351,8 @@ verify_round_trip <- function(original, path, dataset_name) {
 verify_round_trip(adsl, adsl_xpt, "ADSL")
 verify_round_trip(adlb, adlb_xpt, "ADLB")
 verify_round_trip(adae, adae_xpt, "ADAE")
+verify_round_trip(adtte, adtte_xpt, "ADTTE")
+verify_round_trip(adqsadas, adqsadas_xpt, "ADQSADAS")
 
-message("\nXPT export complete: ", adsl_xpt, ", ", adlb_xpt, ", ", adae_xpt)
+message("\nXPT export complete: ", paste(c(adsl_xpt, adlb_xpt, adae_xpt, adtte_xpt, adqsadas_xpt),
+                                          collapse = ", "))

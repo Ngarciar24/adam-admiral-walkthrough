@@ -1,0 +1,39 @@
+codelist,name,datatype,order,value,decode
+CL.NY,No Yes Response,text,1,Y,
+CL.NY,No Yes Response,text,2,N,
+CL.Y,Yes Response,text,1,Y,
+CL.SEX,Sex,text,1,F,Female
+CL.SEX,Sex,text,2,M,Male
+CL.TRT,Treatment,text,1,Placebo,
+CL.TRT,Treatment,text,2,Xanomeline Low Dose,
+CL.TRT,Treatment,text,3,Xanomeline High Dose,
+CL.TRTN,Treatment (N),integer,1,0,Placebo
+CL.TRTN,Treatment (N),integer,2,54,Xanomeline Low Dose
+CL.TRTN,Treatment (N),integer,3,81,Xanomeline High Dose
+CL.AGEGR1,Pooled Age Group 1,text,1,<65,
+CL.AGEGR1,Pooled Age Group 1,text,2,65-80,
+CL.AGEGR1,Pooled Age Group 1,text,3,>80,
+CL.AGEGR1N,Pooled Age Group 1 (N),integer,1,1,<65
+CL.AGEGR1N,Pooled Age Group 1 (N),integer,2,2,65-80
+CL.AGEGR1N,Pooled Age Group 1 (N),integer,3,3,>80
+CL.EOSSTT,End of Study Status,text,1,COMPLETED,
+CL.EOSSTT,End of Study Status,text,2,DISCONTINUED,
+CL.NRIND,Reference Range Indicator,text,1,LOW,
+CL.NRIND,Reference Range Indicator,text,2,NORMAL,
+CL.NRIND,Reference Range Indicator,text,3,HIGH,
+CL.DATEFL,Date Imputation Flag,text,1,D,Day imputed
+CL.DATEFL,Date Imputation Flag,text,2,M,Month and day imputed
+CL.CNSR,Censor,integer,1,0,Event
+CL.CNSR,Censor,integer,2,1,Censored
+CL.DTYPE,Derivation Type,text,1,LOCF,Last Observation Carried Forward
+CL.PARAMCD.ADLB,ADLB Parameter Code,text,1,ALT,Alanine Aminotransferase (U/L)
+CL.PARAMCD.ADLB,ADLB Parameter Code,text,2,AST,Aspartate Aminotransferase (U/L)
+CL.PARAMCD.ADLB,ADLB Parameter Code,text,3,BILI,Bilirubin (umol/L)
+CL.PARAMCD.ADLB,ADLB Parameter Code,text,4,CREAT,Creatinine (umol/L)
+CL.PARAMCD.ADLB,ADLB Parameter Code,text,5,HGB,Hemoglobin (mmol/L)
+CL.PARAMCD.ADTTE,ADTTE Parameter Code,text,1,TTDE,Time to First Dermatologic Event (days)
+CL.PARAMCD.ADQSADAS,ADQSADAS Parameter Code,text,1,ACTOT,ADAS-Cog(11) Total Score
+CL.AVISIT.ADQSADAS,ADQSADAS Analysis Visit,text,1,Baseline,
+CL.AVISIT.ADQSADAS,ADQSADAS Analysis Visit,text,2,Week 8,
+CL.AVISIT.ADQSADAS,ADQSADAS Analysis Visit,text,3,Week 16,
+CL.AVISIT.ADQSADAS,ADQSADAS Analysis Visit,text,4,Week 24,

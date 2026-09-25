@@ -12,6 +12,7 @@
 # Change log : 2026-09-16  IGR  Initial version
 #              2026-09-17  IGR  Part B calls the shared R/derive_ablfl.R
 #              2026-09-25  IGR  Standard header; comments condensed
+#              2026-09-25  IGR  CHG/PCHG/SHIFT1 post-baseline only; TRTPN/TRTAN
 # -----------------------------------------------------------------------------
 
 library(testthat)
@@ -161,9 +162,9 @@ test_that("BNRIND is the ANRIND of the baseline record", {
 # ---------------------------------------------------------------------------
 # 5. CHG / PCHG arithmetic
 # ---------------------------------------------------------------------------
-# Arithmetic where AVAL and BASE exist; missing otherwise.
+# Arithmetic after first dose where AVAL and BASE exist; missing otherwise.
 test_that("CHG == AVAL - BASE and PCHG == 100*(AVAL-BASE)/BASE", {
-  ok <- adlb %>% filter(!is.na(AVAL), !is.na(BASE))
+  ok <- adlb %>% filter(!is.na(AVAL), !is.na(BASE), ADT > TRTSDT)
   expect_gt(nrow(ok), 0L)
   expect_lt(max(abs(ok$CHG - (ok$AVAL - ok$BASE))), TOL)
 
@@ -174,6 +175,28 @@ test_that("CHG == AVAL - BASE and PCHG == 100*(AVAL-BASE)/BASE", {
   # Missing values propagate.
   expect_true(all(is.na(adlb$CHG[is.na(adlb$AVAL) | is.na(adlb$BASE)])))
   expect_true(all(is.na(adlb$PCHG[is.na(adlb$AVAL) | is.na(adlb$BASE)])))
+})
+
+test_that("CHG, PCHG and SHIFT1 are missing on and before the day of first dose", {
+  pre <- adlb %>% filter(ADT <= TRTSDT)
+  expect_gt(nrow(pre), 0L)
+  expect_true(all(is.na(pre$CHG) & is.na(pre$PCHG) & is.na(pre$SHIFT1)))
+  # Every post-baseline record with AVAL and BASE has a CHG.
+  post <- adlb %>% filter(ADT > TRTSDT, !is.na(AVAL), !is.na(BASE))
+  expect_false(anyNA(post$CHG))
+})
+
+test_that("SHIFT1 is 'BNRIND to ANRIND' after first dose when both exist", {
+  expect_false(any(grepl("NULL", adlb$SHIFT1, fixed = TRUE)))
+  want <- if_else(adlb$ADT > adlb$TRTSDT & !is.na(adlb$BNRIND) & !is.na(adlb$ANRIND),
+                  paste(adlb$BNRIND, "to", adlb$ANRIND), NA_character_)
+  expect_equal(adlb$SHIFT1, want)
+})
+
+test_that("TRTPN/TRTAN are the numeric codes of TRTP/TRTA", {
+  dose <- c(Placebo = 0, "Xanomeline Low Dose" = 54, "Xanomeline High Dose" = 81)
+  expect_equal(adlb$TRTPN, unname(dose[adlb$TRTP]))
+  expect_equal(adlb$TRTAN, unname(dose[adlb$TRTA]))
 })
 
 # ---------------------------------------------------------------------------

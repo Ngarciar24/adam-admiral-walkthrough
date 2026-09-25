@@ -1,0 +1,6 @@
+dataset,variable,paramcd,datatype,origin,source,description
+ADLB,AVAL,ALT,float,Predecessor,LB.LBSTRESN,Alanine Aminotransferase (U/L): LB.LBSTRESN where LBTESTCD = 'ALT'
+ADLB,AVAL,AST,float,Predecessor,LB.LBSTRESN,Aspartate Aminotransferase (U/L): LB.LBSTRESN where LBTESTCD = 'AST'
+ADLB,AVAL,BILI,float,Predecessor,LB.LBSTRESN,Bilirubin (umol/L): LB.LBSTRESN where LBTESTCD = 'BILI'
+ADLB,AVAL,CREAT,float,Predecessor,LB.LBSTRESN,Creatinine (umol/L): LB.LBSTRESN where LBTESTCD = 'CREAT'
+ADLB,AVAL,HGB,float,Predecessor,LB.LBSTRESN,Hemoglobin (mmol/L): LB.LBSTRESN where LBTESTCD = 'HGB'
