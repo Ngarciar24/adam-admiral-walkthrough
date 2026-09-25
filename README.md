@@ -45,6 +45,7 @@ tests/testthat/              tests
 outputs/                     tables, figure and a printed traceability trace
 data/adam/                   adsl.xpt, adlb.xpt, adae.xpt
 python/check_adam.py         pandas re-check of the exports
+docs/implementation-notes.md rationale and checked facts behind the derivations
 .github/workflows/tests.yml  CI
 ```
 

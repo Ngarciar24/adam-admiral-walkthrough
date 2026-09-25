@@ -1,20 +1,18 @@
 """
-Independent cross-language check of the ADaM exports, reading the SAS
-Transport files with pandas.
-
-Why this exists: work in this area is migrating from SAS to R and Python. The
-.xpt files are language-neutral, so a second language can re-verify the R
-derivations by a different door -- pandas here, nothing from the R side is
-imported.
-
-Two kinds of check: structural invariants of ADLB, and an independent
-re-derivation of the ADAE treatment-emergent flag from the dates carried in the
-file. The second is the double-programming idea: the rule is written again in
-another language, from its SAP wording, and the two implementations must agree
-row for row.
-
-Run from the project root:  python3 python/check_adam.py
-Requires only pandas (pd.read_sas handles XPT v5 natively).
+Program    : check_adam.py
+Study      : CDISCPILOT01 (public CDISC pilot test data, {pharmaversesdtm})
+Purpose    : Independent re-check of the ADaM transport files in Python:
+             structural checks on ADLB, one Table 2 cell reproduced, and the
+             ADAE treatment-emergent flag re-derived from the dates in the file
+             and compared with the R result row by row
+Inputs     : data/adam/adlb.xpt, data/adam/adae.xpt,
+             outputs/t2_alt_change_by_visit.csv
+Outputs    : Console report; exit status 1 if any check fails
+Usage      : python3 python/check_adam.py   (from the project root; needs pandas)
+Author     : Ignacio G. Ribelles
+Created    : 2026-09-17
+Change log : 2026-09-17  IGR  Initial version
+             2026-09-25  IGR  Standard header
 """
 from pathlib import Path
 import sys
@@ -64,8 +62,7 @@ check("Table 2 cell WEEK 8 / High Dose / Mean CHG reproduced by pandas",
 #    than 30 days after last dose. admiral returns "Y" or missing, never "N";
 #    an event that ENDED before first dose is not emergent even if its onset is
 #    unknown, and an event with unknown onset that did not end before first dose
-#    is counted. Both branches are written out here so that a reader can compare
-#    this function with the admiral call directly.
+#    is counted. Both branches mirror derive_var_trtemfl().
 #    pd.read_sas() leaves XPT dates as plain SAS day counts (days since
 #    1960-01-01), so the 30-day window is an addition of 30, not a Timedelta.
 adae = pd.read_sas(ROOT / "data/adam/adae.xpt", format="xport", encoding="latin-1")

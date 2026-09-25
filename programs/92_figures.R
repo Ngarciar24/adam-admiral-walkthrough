@@ -1,25 +1,20 @@
-# ---------------------------------------------------------------------------
-# 92_figures.R -- Figure 1: mean change from baseline in ALT by visit and arm
-#
-# Same slice of ADLB as Table 2 (programs/91_tables.R): safety population,
-# PARAMCD == "ALT", scheduled visits only. The figure and the table are two
-# views of the same rows, so every mean plotted here can be read off the table
-# and the table's n is the figure's n. Nothing is derived in this program; it
-# only summarises columns that already exist in ADLB.
-#
-# Error bars are +/- 1 standard error of the mean CHG within visit x arm. They
-# describe the precision of each plotted mean; they are not a hypothesis test.
-#
-# Only visits with at least 10 subjects in every arm are drawn. Table 2 keeps
-# every scheduled visit, including two ("AMBUL ECG REMOVAL", "RETRIEVAL") that
-# hold a single Low Dose record; a one-subject "mean" plotted as a point with
-# no error bar reads as a trend, so the figure applies a minimum n and says so.
-# The threshold is a presentation choice, not an analysis rule.
-#
-# Colours are three hues from the Okabe-Ito colour-blind-safe palette in a
-# fixed order per arm, and each arm also has its own point shape, so arm
-# identity never depends on colour alone.
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Program    : 92_figures.R
+# Study      : CDISCPILOT01 (public CDISC pilot test data, {pharmaversesdtm})
+# Purpose    : Figure 1: mean change from baseline in ALT by visit and planned
+#              treatment, +/- 1 standard error
+# Inputs     : data/adam/adlb.rds; outputs/t2_alt_change_by_visit.csv
+# Outputs    : outputs/f1_alt_chg_by_visit.png, .csv
+# Author     : Ignacio G. Ribelles
+# Created    : 2026-09-17
+# Change log : 2026-09-17  IGR  Initial version
+#              2026-09-25  IGR  Standard header
+# Notes      : Same records as Table 2 (safety population, ALT, scheduled
+#              visits). Only visits with at least 10 subjects in every arm are
+#              drawn; Table 2 keeps all scheduled visits. The program stops if
+#              a plotted mean differs from the Table 2 cell. Colours are
+#              Okabe-Ito (colour-blind safe) and each arm has its own shape.
+# -----------------------------------------------------------------------------
 
 source("programs/00_setup.R")
 library(ggplot2)
