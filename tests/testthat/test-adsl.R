@@ -9,11 +9,14 @@
 # Created    : 2026-09-16
 # Change log : 2026-09-16  IGR  Initial version
 #              2026-09-25  IGR  Standard header; comments condensed
+#              2026-09-25  IGR  Treatment codes, TRTEDT rule, EFFFL, COMP24FL
+#                               and SITEGR1 tests added
 # Notes      : Two kinds of assertion: structural invariants that hold in any
 #              study, and pinned counts for this extract (306 subjects, 52
 #              screen failures) that act as regression guards. Where possible
 #              the expected value is re-derived from SDTM with plain dplyr.
-#              Not covered: labels, lengths, codelists, define.xml conformance.
+#              Labels, lengths, codelists and define.xml are checked by
+#              python/validate_define.py and python/adam_conformance.py.
 # -----------------------------------------------------------------------------
 
 library(testthat)
@@ -176,6 +179,47 @@ test_that("TRT01A is populated for every subject in the safety population", {
 
   # Arm counts add up to the population (follows from the checks above).
   expect_equal(sum(table(treated$TRT01A)), nrow(treated))
+})
+
+test_that("treatment variables are missing for screen failures and coded by dose", {
+  sf <- adsl %>% filter(ARMCD == "Scrnfail")
+  expect_true(all(is.na(sf$TRT01P) & is.na(sf$TRT01A) & is.na(sf$TRT01PN) & is.na(sf$TRT01AN)))
+  itt <- adsl %>% filter(ITTFL == "Y")
+  dose <- c(Placebo = 0, "Xanomeline Low Dose" = 54, "Xanomeline High Dose" = 81)
+  expect_equal(itt$TRT01PN, unname(dose[itt$TRT01P]))
+  expect_equal(itt$TRT01AN, unname(dose[itt$TRT01A]))
+  expect_equal(sum(itt$TRT01P != itt$TRT01A), 12L)
+})
+
+test_that("every dosed subject has a last-dose date", {
+  # When the last EX record has no end date, the end-of-study date is used.
+  saf <- adsl %>% filter(SAFFL == "Y")
+  expect_false(anyNA(saf$TRTEDT))
+  open_last <- pharmaversesdtm::ex %>%
+    group_by(USUBJID) %>%
+    slice_max(EXSTDTC, n = 1, with_ties = FALSE) %>%
+    filter(is.na(EXENDTC) | EXENDTC == "") %>%
+    pull(USUBJID)
+  chk <- saf %>% filter(USUBJID %in% open_last)
+  expect_equal(nrow(chk), 6L)
+  expect_equal(chk$TRTEDT, chk$EOSDT)
+})
+
+test_that("EFFFL and COMP24FL are Y/N subsets of the safety population", {
+  expect_setequal(unique(adsl$EFFFL), c("Y", "N"))
+  expect_setequal(unique(adsl$COMP24FL), c("Y", "N"))
+  expect_true(all(adsl$SAFFL[adsl$EFFFL == "Y"] == "Y"))
+  expect_true(all(adsl$SAFFL[adsl$COMP24FL == "Y"] == "Y"))
+  expect_equal(sum(adsl$EFFFL == "Y"), 234L)
+  expect_equal(sum(adsl$COMP24FL == "Y"), 118L)
+})
+
+test_that("SITEGR1 pools sites with fewer than 3 ITT subjects in any arm", {
+  itt <- adsl %>% filter(ITTFL == "Y")
+  counts <- table(itt$SITEID, factor(itt$TRT01P))
+  small <- rownames(counts)[apply(counts, 1, min) < 3]
+  expect_equal(itt$SITEGR1, if_else(itt$SITEID %in% small, "900", itt$SITEID))
+  expect_true("900" %in% itt$SITEGR1)
 })
 
 

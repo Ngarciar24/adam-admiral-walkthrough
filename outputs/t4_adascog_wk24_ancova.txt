@@ -1,0 +1,23 @@
+Table 4. ADAS-Cog(11) Total Score: Change from Baseline to Week 24 (LOCF)
+Efficacy Population (EFFFL = 'Y'); planned treatment (TRTP)
+
+——————————————————————————————————————————————————————————————————————————————————————————————————
+                                           Placebo      Xanomeline Low Dose   Xanomeline High Dose
+                                            (N=79)            (N=81)                 (N=74)       
+——————————————————————————————————————————————————————————————————————————————————————————————————
+Baseline, mean (SD)                      24.1 (12.19)      24.4 (12.92)           21.3 (11.74)    
+Week 24, mean (SD)                       26.7 (13.79)      26.4 (13.18)           22.8 (12.48)    
+Change from baseline, mean (SD)           2.5 (5.80)        2.0 (5.55)             1.5 (4.26)     
+  of which Week 24 value by LOCF, n           14                32                     33         
+LS mean change (SE)                       2.5 (0.60)        2.0 (0.59)             1.5 (0.62)     
+LS mean difference vs placebo (95% CI)                   -0.5 (-2.1, 1.1)       -1.0 (-2.7, 0.7)  
+p-value vs placebo                                             0.569                 0.233        
+Dose-response p-value                       0.245                                                 
+——————————————————————————————————————————————————————————————————————————————————————————————————
+
+ANCOVA: CHG = treatment + pooled site (SITEGR1) + baseline score. LS means from emmeans;
+differences and p-values unadjusted for multiplicity. Dose-response: same model with dose
+(0, 54, 81 mg) as a continuous term. Week 24 window: study day > 140; LOCF from the last
+analysed value (ANL01FL = 'Y'). Higher ADAS-Cog scores indicate worse cognition.
+
+Program: programs/93_tables_tte_eff.R | Source: ADQSADAS (PARAMCD = 'ACTOT')

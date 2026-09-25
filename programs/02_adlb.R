@@ -13,6 +13,8 @@
 # Change log : 2026-09-16  IGR  Initial version
 #              2026-09-17  IGR  Baseline rule moved to R/derive_ablfl.R
 #              2026-09-25  IGR  Standard header; comments condensed
+#              2026-09-25  IGR  CHG, PCHG and SHIFT1 on post-baseline records
+#                               only; TRTPN/TRTAN added
 # Notes      : Keys: (USUBJID, ASEQ) and (USUBJID, PARAMCD, ADT, LBSEQ).
 #              (USUBJID, PARAMCD, AVISIT) is not unique because all unscheduled
 #              visits share one AVISIT; see docs/implementation-notes.md.
@@ -34,13 +36,16 @@ adlb <- lb %>%
   derive_vars_merged(
     dataset_add = adsl,
     by_vars     = exprs(STUDYID, USUBJID),
-    new_vars    = exprs(TRT01P, TRT01A, TRTSDT, TRTEDT, SAFFL, ITTFL, AGEGR1, SEX)
+    new_vars    = exprs(TRT01P, TRT01PN, TRT01A, TRT01AN, TRTSDT, TRTEDT,
+                        SAFFL, ITTFL, AGEGR1, SEX)
   ) %>%
 
   # Single-period study: record-level treatment equals period-01 treatment.
   mutate(
-    TRTP = TRT01P,
-    TRTA = TRT01A
+    TRTP  = TRT01P,
+    TRTPN = TRT01PN,
+    TRTA  = TRT01A,
+    TRTAN = TRT01AN
   ) %>%
 
   # =============================================================================
@@ -91,9 +96,16 @@ adlb <- lb %>%
   # =============================================================================
   # 5. Change from baseline
   # =============================================================================
-  # Populated on every row with AVAL and BASE, including pre-baseline rows.
-  derive_var_chg() %>%
-  derive_var_pchg() %>%
+  # Post-baseline records only (ADT after first dose); missing on the baseline
+  # record and on earlier records.
+  restrict_derivation(
+    derivation = derive_var_chg,
+    filter     = ADT > TRTSDT
+  ) %>%
+  restrict_derivation(
+    derivation = derive_var_pchg,
+    filter     = ADT > TRTSDT
+  ) %>%
 
   # =============================================================================
   # 6. Reference-range indicators
@@ -105,13 +117,16 @@ adlb <- lb %>%
     new_var    = BNRIND
   ) %>%
 
-  # Shift from baseline category to current category. missing_value is left
-  # at the admiral default ("NULL"), so the 5 BILI rows without ANRIND read
-  # "NORMAL to NULL".
-  derive_var_shift(
-    new_var  = SHIFT1,
-    from_var = BNRIND,
-    to_var   = ANRIND
+  # Shift from baseline to current category, on post-baseline records where
+  # both categories exist; missing otherwise.
+  restrict_derivation(
+    derivation = derive_var_shift,
+    args = params(
+      new_var  = SHIFT1,
+      from_var = BNRIND,
+      to_var   = ANRIND
+    ),
+    filter = ADT > TRTSDT & !is.na(BNRIND) & !is.na(ANRIND)
   ) %>%
 
   # =============================================================================
@@ -127,7 +142,8 @@ adlb <- lb %>%
   # SDTM variables are kept for traceability back to LB (USUBJID + LBSEQ).
   select(
     STUDYID, USUBJID, ASEQ,
-    TRTP, TRTA, TRT01P, TRT01A, TRTSDT, TRTEDT, SAFFL, ITTFL, AGEGR1, SEX,
+    TRTP, TRTPN, TRTA, TRTAN, TRT01P, TRT01PN, TRT01A, TRT01AN,
+    TRTSDT, TRTEDT, SAFFL, ITTFL, AGEGR1, SEX,
     PARAMCD, PARAM, PARAMN, PARCAT1,
     AVAL, AVALC, AVALU, ABLFL, BASE, CHG, PCHG,
     ANRLO, ANRHI, ANRIND, BNRIND, SHIFT1,

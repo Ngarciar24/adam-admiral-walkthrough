@@ -3,14 +3,19 @@
 # Study      : CDISCPILOT01 (public CDISC pilot test data, {pharmaversesdtm})
 # Purpose    : Create ADSL, the subject-level analysis dataset (one row per
 #              subject): treatment variables, treatment dates, disposition,
-#              population flags and age groups
-# Inputs     : SDTM DM, EX, DS (via programs/00_setup.R)
-#              metadata/adsl_agegr1.csv
+#              population flags, pooled site and age groups
+# Inputs     : SDTM DM, EX, DS, SV, QS (via programs/00_setup.R)
+#              metadata/adsl_agegr1.csv, metadata/adsl_trt.csv
 # Outputs    : data/adam/adsl.rds
 # Author     : Ignacio G. Ribelles
 # Created    : 2026-09-16
 # Change log : 2026-09-16  IGR  Initial version
 #              2026-09-25  IGR  Standard header; comments condensed
+#              2026-09-25  IGR  Treatment variables missing for screen
+#                               failures; TRT01PN/TRT01AN, SITEGR1, RFENDT,
+#                               EFFFL and COMP24FL added; TRTEDT from the
+#                               end-of-study date when the last dose record
+#                               has no end date
 # Notes      : Derivation rules and data checks: docs/implementation-notes.md
 # -----------------------------------------------------------------------------
 
@@ -58,11 +63,13 @@ adsl <- dm %>%
   select(-DOMAIN) %>%
 
   # -- Planned and actual treatment ----------------------------------------
-  # Copied from ARM/ACTARM, so screen failures carry "Screen Failure"; they
-  # are excluded from analyses through ITTFL/SAFFL.
+  # From ARM/ACTARM; missing for screen failures, who were never assigned a
+  # treatment. Numeric codes are the daily dose in mg (metadata/adsl_trt.csv).
   mutate(
-    TRT01P = ARM,
-    TRT01A = ACTARM
+    TRT01P  = if_else(ARMCD == "Scrnfail", NA_character_, ARM),
+    TRT01A  = if_else(ACTARMCD == "Scrnfail", NA_character_, ACTARM),
+    TRT01PN = adsl_trt$TRTN[match(TRT01P, adsl_trt$TRT)],
+    TRT01AN = adsl_trt$TRTN[match(TRT01A, adsl_trt$TRT)]
   ) %>%
 
   # -- First dose ------------------------------------------------------------
@@ -79,20 +86,19 @@ adsl <- dm %>%
   ) %>%
 
   # -- Last dose -------------------------------------------------------------
+  # End of the last qualifying dose record (by start); missing if that record
+  # has no end date (completed below from the end-of-study date).
   derive_vars_merged(
     dataset_add = ex_ext,
     by_vars     = exprs(STUDYID, USUBJID),
     filter_add  = (EXDOSE > 0 | (EXDOSE == 0 & str_detect(EXTRT, "PLACEBO"))) &
-      !is.na(EXENDTM),
+      !is.na(EXSTDTM),
     new_vars    = exprs(TRTEDTM = EXENDTM, TRTETMF = EXENTMF),
-    order       = exprs(EXENDTM, EXSEQ),
+    order       = exprs(EXSTDTM, EXSEQ),
     mode        = "last"
   ) %>%
 
   derive_vars_dtm_to_dt(source_vars = exprs(TRTSDTM, TRTEDTM)) %>%
-
-  # TRTDURD = TRTEDT - TRTSDT + 1
-  derive_var_trtdurd() %>%
 
   # -- Randomisation date ----------------------------------------------------
   derive_vars_merged(
@@ -116,6 +122,19 @@ adsl <- dm %>%
     ),
     order = exprs(DSSTDT, DSSEQ),
     mode  = "last"
+  ) %>%
+
+  # -- Last dose date when the last dose record has no end date ----------------
+  # The end-of-study date is used, then the duration is derived.
+  mutate(TRTEDT = if_else(is.na(TRTEDT) & !is.na(TRTSDT), EOSDT, TRTEDT)) %>%
+
+  # TRTDURD = TRTEDT - TRTSDT + 1
+  derive_var_trtdurd() %>%
+
+  # -- Reference end date (end of study participation) -------------------------
+  derive_vars_dt(
+    dtc             = RFENDTC,
+    new_vars_prefix = "RFEN"
   ) %>%
 
   # -- Death date --------------------------------------------------------------
@@ -145,6 +164,41 @@ adsl <- dm %>%
     ITTFL = if_else(!is.na(ARMCD) & ARMCD != "Scrnfail", "Y", "N")
   ) %>%
 
+  # -- Efficacy population -----------------------------------------------------
+  # Y = in the safety population with at least one post-baseline (VISITNUM > 3)
+  # ADAS-Cog and at least one post-baseline CIBIC+ assessment.
+  derive_var_merged_exist_flag(
+    dataset_add   = qs,
+    by_vars       = exprs(STUDYID, USUBJID),
+    new_var       = ADASPBFL,
+    condition     = QSCAT == "ALZHEIMER'S DISEASE ASSESSMENT SCALE" & VISITNUM > 3
+  ) %>%
+  derive_var_merged_exist_flag(
+    dataset_add   = qs,
+    by_vars       = exprs(STUDYID, USUBJID),
+    new_var       = CIBCPBFL,
+    condition     = QSCAT == "CLINICIAN'S INTERVIEW-BASED IMPRESSION OF CHANGE (CIBIC+)" &
+      VISITNUM > 3
+  ) %>%
+  mutate(
+    EFFFL = if_else(SAFFL == "Y" & ADASPBFL %in% "Y" & CIBCPBFL %in% "Y", "Y", "N")
+  ) %>%
+  select(-ADASPBFL, -CIBCPBFL) %>%
+
+  # -- Week 24 completers ------------------------------------------------------
+  # Y = the Week 24 visit (SV VISITNUM 12) took place on or before the end of
+  # study participation.
+  derive_vars_merged(
+    dataset_add = derive_vars_dt(sv, dtc = SVSTDTC, new_vars_prefix = "SVST"),
+    by_vars     = exprs(STUDYID, USUBJID),
+    filter_add  = VISITNUM == 12,
+    new_vars    = exprs(WK24DT = SVSTDT)
+  ) %>%
+  mutate(
+    COMP24FL = if_else(!is.na(WK24DT) & !is.na(RFENDT) & RFENDT >= WK24DT, "Y", "N")
+  ) %>%
+  select(-WK24DT) %>%
+
   # -- Age groups --------------------------------------------------------------
   # Cut points and labels from metadata/adsl_agegr1.csv. Missing AGE gives
   # missing AGEGR1/AGEGR1N rather than a default band.
@@ -163,6 +217,21 @@ adsl <- dm %>%
     },
     AGEGR1 = adsl_agegr1$AGEGR1[match(AGEGR1N, adsl_agegr1$AGEGR1N)]
   )
+
+# -- Pooled site ----------------------------------------------------------------
+# A site is pooled into "900" when any planned arm has fewer than 3 ITT
+# subjects there; otherwise SITEGR1 = SITEID. Used as a model covariate.
+small_sites <- adsl %>%
+  filter(ITTFL == "Y") %>%
+  count(SITEID, TRT01P) %>%
+  tidyr::complete(SITEID, TRT01P, fill = list(n = 0L)) %>%
+  group_by(SITEID) %>%
+  summarise(pooled = any(n < 3), .groups = "drop") %>%
+  filter(pooled) %>%
+  pull(SITEID)
+
+adsl <- adsl %>%
+  mutate(SITEGR1 = if_else(SITEID %in% small_sites, "900", SITEID))
 
 # =============================================================================
 # 4. Save
