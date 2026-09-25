@@ -1,0 +1,21 @@
+Table 3. Time to First Treatment-Emergent Dermatologic Adverse Event
+Safety Population (SAFFL = 'Y'); actual treatment (TRTA)
+
+——————————————————————————————————————————————————————————————————————————————————————————————
+                                        Placebo     Xanomeline Low Dose   Xanomeline High Dose
+                                        (N=86)            (N=96)                 (N=72)       
+——————————————————————————————————————————————————————————————————————————————————————————————
+Subjects with event, n (%)            29 (33.7%)        63 (65.6%)             60 (83.3%)     
+Subjects censored, n (%)              57 (66.3%)        33 (34.4%)             12 (16.7%)     
+Median time to event, days (95% CI)   NE (NE, NE)       34 (27, 48)           31 (22, 46)     
+Event-free at day 28, %                  84.4              58.1                   56.8        
+Event-free at day 84, %                  68.5              24.1                   15.5        
+Hazard ratio vs placebo (95% CI)                     4.03 (2.56, 6.34)     5.06 (3.17, 8.06)  
+Log-rank p-value vs placebo                               <0.001                 <0.001       
+——————————————————————————————————————————————————————————————————————————————————————————————
+
+Event: first TEAE with CQ01NAM = 'DERMATOLOGIC EVENTS'. Censored at end of study (RFENDT).
+Time = ADT - TRTSDT + 1 days. Kaplan-Meier estimates; 95% CI by log-log transformation.
+NE = not estimable. Hazard ratio from a Cox model with treatment only.
+
+Program: programs/93_tables_tte_eff.R | Source: ADTTE (PARAMCD = 'TTDE')

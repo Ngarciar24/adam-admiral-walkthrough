@@ -1,0 +1,88 @@
+COMPARISON WITH THE PUBLISHED CDISC PILOT ADaM DATASETS
+Reference: phuse-org/phuse-scripts@398a6d33ced9359ffb58c46650a6d488811176b1, data/adam/cdiscpilot01/
+Each row: records compared and records that differ. Explanations: metadata/pilot_differences.csv
+
+ADSL
+  item                       compared   differ  status      explanation
+  (records only in ours)          254        0  match       
+  (records only in pilot)         254        0  match       
+  SITEID                          254        0  match       
+  SITEGR1                         254        0  match       
+  AGE                             254        0  match       
+  AGEGR1                          254        0  match       
+  AGEGR1N                         254        0  match       
+  SEX                             254        0  match       
+  RACE                            254        0  match       
+  TRT01P                          254        0  match       
+  TRT01PN                         254        0  match       
+  TRT01A                          254       12  explained   Actual treatment from DM.ACTARM (12 subjects randomised to high dose received low dose); the pilot sets TRT01A = TRT01P.
+  TRT01AN                         254       12  explained   Follows TRT01A.
+  TRTSDT                          254        0  match       
+  TRTEDT                          254        0  match       
+  TRTDUR                          254        0  match       
+  SAFFL                           254        0  match       
+  ITTFL                           254        0  match       
+  EFFFL                           254        0  match       
+  COMP24FL                        254        0  match       
+
+ADAE
+  item                       compared   differ  status      explanation
+  (records only in ours)         1191        0  match       
+  (records only in pilot)        1191        0  match       
+  TRTA                           1191       19  explained   Follows ADSL.TRT01A: the 19 events of the 12 subjects whose actual treatment differs.
+  TRTAN                          1191       19  explained   Follows TRTA.
+  ASTDT                          1191       11  explained   Year-only onset dates are imputed to 1 January (ASTDTF = 'M'); the pilot leaves them missing.
+  ASTDTF                         1191       11  explained   Follows ASTDT: 'M' for the 11 year-only dates.
+  AENDT                          1191        0  match       
+  ASTDY                          1191       11  explained   Follows ASTDT.
+  AENDY                          1191        0  match       
+  ADURN                          1191        4  explained   Duration is computed when the start day was imputed (subject 01-716-1418); the pilot leaves it missing. ASTDTF identifies these records.
+  TRTEMFL                        1191        0  match       
+  AOCCFL                         1191        0  match       
+  AOCCSFL                        1191        0  match       
+  AOCCPFL                        1191        0  match       
+  CQ01NAM                        1191        0  match       
+  AOCC01FL                       1191        0  match       
+
+ADLB
+  item                       compared   differ  status      explanation
+  (records only in ours)         9079       12  explained   Every LB record of the five parameters is kept; the pilot omits 12 records of 4 subjects at AMBUL ECG REMOVAL, RETRIEVAL and one BASELINE visit.
+  (records only in pilot)        9067        0  match       
+  ADT                            9067        0  match       
+  ADY                            9067        0  match       
+  AVAL                           9067        0  match       
+  ABLFL                          9067      226  explained   Baseline is the last non-missing value on or before first dose; the pilot uses the SDTM baseline flag (LBBLFL, SCREENING 1).
+  BASE                           9067      773  explained   Follows ABLFL: a different baseline record gives a different BASE, including 15 subject-parameters without an SDTM baseline flag.
+  CHG                            9067      706  explained   Follows BASE, and CHG is only derived after first dose; the pilot also derives it on pre-dose records.
+  ANRIND                         9067      437  explained   ANRIND compares AVAL with the normal range (ANRLO/ANRHI); the pilot reports 'N' for 432 values outside that range and for the 5 values below the limit of quantification.
+  BNRIND                         9067      568  explained   Follows ABLFL and ANRIND.
+
+ADTTE
+  item                       compared   differ  status      explanation
+  (records only in ours)          254        0  match       
+  (records only in pilot)         254        0  match       
+  TRTA                            254       12  explained   Follows ADSL.TRT01A.
+  TRTAN                           254       12  explained   Follows TRTA.
+  STARTDT                         254        0  match       
+  ADT                             254        0  match       
+  AVAL                            254        0  match       
+  CNSR                            254        0  match       
+  SRCSEQ                          254        0  match       
+
+ADQSADAS
+  item                       compared   differ  status      explanation
+  (records only in ours)         1016        0  match       
+  (records only in pilot)        1016        0  match       
+  ADT                            1016       33  explained   LOCF records carry the date of the analysed record whose value is carried; the pilot gives the date of a later, non-analysed record in the earlier window. AVAL is identical.
+  ADY                            1016       33  explained   Follows ADT.
+  AVAL                           1016        0  match       
+  BASE                           1016        0  match       
+  CHG                            1016        0  match       
+  ABLFL                          1016        0  match       
+  DTYPE                          1016        0  match       
+  QSSEQ                          1016       33  explained   Follows ADT.
+  EFFFL                          1016        0  match       
+  COMP24FL                       1016        0  match       
+  (LOCF records all)              222       19  explained   The pilot additionally marks 19 non-analysed records (a second record in the same window, ANL01FL missing) as DTYPE = 'LOCF'.
+
+Items compared: 68; matching: 48; explained differences: 20; unexplained: 0

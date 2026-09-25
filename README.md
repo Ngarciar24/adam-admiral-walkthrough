@@ -2,19 +2,46 @@
 
 [![build-and-test](https://github.com/Ngarciar24/adam-admiral-walkthrough/actions/workflows/tests.yml/badge.svg)](https://github.com/Ngarciar24/adam-admiral-walkthrough/actions/workflows/tests.yml)
 
-ADaM datasets built with [{admiral}](https://pharmaverse.github.io/admiral/) from the public CDISC pilot study data in `{pharmaversesdtm}`.
-
-I built this to learn the CDISC standards hands-on. It uses public test data only.
+ADaM datasets, define.xml and analysis outputs for the public CDISC pilot study (CDISCPILOT01), built in R with [{admiral}](https://pharmaverse.github.io/admiral/) and checked against the published pilot ADaM datasets.
 
 ## What it does
 
-- Builds **ADSL** (306 subjects), **ADLB** (BDS, five lab parameters) and **ADAE** (OCCDS) from SDTM.
-- Derives treatment dates, population flags, baseline flags, change from baseline, reference-range indicators and treatment-emergent flags.
-- Runs 163 `testthat` checks on the derivations, including unit tests of the baseline rule on hand-built data.
-- Exports ADSL, ADLB and ADAE to SAS Transport (`.xpt`) with `{xportr}`, driven by a CSV specification, and verifies each file by reading it back against the spec.
-- Produces a demographics table and a change-from-baseline table with `{rtables}` and `{tern}`, and a change-from-baseline figure with `{ggplot2}` that is checked cell by cell against the table.
-- Re-checks the `.xpt` exports independently in Python: pandas re-derives the treatment-emergent flag from the dates in the file and must agree with admiral on every row.
-- Rebuilds everything from scratch in GitHub Actions on every push, in a pinned `{renv}` environment.
+- **Datasets.** Builds ADSL, ADLB (BDS), ADAE (OCCDS), ADTTE (time to first dermatologic event) and ADQSADAS (ADAS-Cog, with analysis windows and LOCF) from SDTM.
+- **Transport files and define.xml.** Exports all five to SAS Transport v5 from one specification (`metadata/`). The same specification generates a Define-XML 2.1 `define.xml`, validated against the CDISC schema and against the transport files.
+- **Comparison with the pilot.** Compares every dataset with the published CDISC pilot ADaM datasets, variable by variable. Each difference must be explained in `metadata/pilot_differences.csv` or the run stops.
+- **Outputs.** Produces a demographics table, an ALT change-from-baseline table and figure, a time-to-event table with a Kaplan–Meier plot, and the primary efficacy ANCOVA.
+- **Checks.**
+  - 225 `testthat` expectations on the derivations, including unit tests of the baseline rule on hand-built data.
+  - 71 ADaM conformance checks.
+  - An independent Python re-derivation of the treatment-emergent flag and the time-to-event data.
+- **Reproducibility.** GitHub Actions rebuilds everything on every push, in a pinned `{renv}` environment.
+
+## Results
+
+Primary efficacy analysis (`outputs/t4_adascog_wk24_ancova.txt`). The Ns, differences, confidence intervals and p-values equal the published pilot table, as reproduced in the [R Consortium submission pilot](https://rconsortium.github.io/submissions-pilot1/articles/tlf-primary.html):
+
+```
+Table 4. ADAS-Cog(11) Total Score: Change from Baseline to Week 24 (LOCF)
+Efficacy Population (EFFFL = 'Y'); planned treatment (TRTP)
+                                           Placebo      Xanomeline Low Dose   Xanomeline High Dose
+                                            (N=79)            (N=81)                 (N=74)
+Change from baseline, mean (SD)           2.5 (5.80)        2.0 (5.55)             1.5 (4.26)
+LS mean change (SE)                       2.5 (0.60)        2.0 (0.59)             1.5 (0.62)
+LS mean difference vs placebo (95% CI)                   -0.5 (-2.1, 1.1)       -1.0 (-2.7, 0.7)
+Dose-response p-value                       0.245
+```
+
+Time to first treatment-emergent dermatologic adverse event (`outputs/f2_ttde_km.png`):
+
+![Kaplan-Meier plot of time to first dermatologic adverse event](outputs/f2_ttde_km.png)
+
+Comparison with the published pilot ADaM (`outputs/qc/pilot_comparison.txt`):
+
+```
+Items compared: 68; matching: 48; explained differences: 20; unexplained: 0
+```
+
+The remaining differences come from four documented decisions: actual treatment, imputation of year-only dates, the laboratory baseline rule, and LOCF bookkeeping. See [docs/adrg.md](docs/adrg.md#61-differences-from-the-published-pilot-analysis).
 
 ## Run it
 
@@ -24,68 +51,43 @@ source("run_all.R")
 ```
 
 ```sh
-python3 python/check_adam.py   # needs pandas
+pip install pandas lxml odmlib==0.2.1
+python3 python/check_adam.py        # independent re-derivation
+python3 python/validate_define.py   # define.xml schema and consistency
+python3 python/adam_conformance.py  # ADaM conformance checks
 ```
 
-`run_all.R` rebuilds every dataset, exports the `.xpt` files, writes the tables and the figure, and runs the tests. Output is identical across rebuilds. The GitHub Actions workflow runs both commands.
+`run_all.R` rebuilds every dataset, the `.xpt` files, define.xml, the tables and figures, then compares with the pilot and runs the tests. It downloads SDTM QS and the pilot reference datasets from a pinned commit of `phuse-scripts` and verifies their checksums, so it needs network access.
 
 ## Layout
 
 ```
-programs/00_setup.R          load SDTM, blanks to NA, read metadata
-programs/01_adsl.R           ADSL
-programs/02_adlb.R           ADLB (BDS)
-programs/03_adae.R           ADAE (OCCDS)
-programs/90_export_xpt.R     XPT export, spec coverage and round-trip checks
-programs/91_tables.R         tables
-programs/92_figures.R        figure
-R/derive_ablfl.R             the baseline rule, shared by the program and its tests
-metadata/                    dataset specification (CSV)
-tests/testthat/              tests
-outputs/                     tables, figure and a printed traceability trace
-data/adam/                   adsl.xpt, adlb.xpt, adae.xpt
-python/check_adam.py         pandas re-check of the exports
-.github/workflows/tests.yml  CI
+programs/00_setup.R            load SDTM and metadata
+programs/01_adsl.R             ADSL
+programs/02_adlb.R             ADLB (BDS)
+programs/03_adae.R             ADAE (OCCDS)
+programs/04_adtte.R            ADTTE (time to event)
+programs/05_adqsadas.R         ADQSADAS (windows, LOCF)
+programs/90_export_xpt.R       XPT export, spec coverage and round-trip checks
+programs/91_tables.R           Tables 1-2 and a traceability trace
+programs/92_figures.R          Figures 1-2
+programs/93_tables_tte_eff.R   Tables 3-4 (time to event, ANCOVA)
+programs/94_define.R           define.xml and define.html
+programs/95_compare_pilot.R    comparison with the published pilot ADaM
+R/                             shared functions (baseline rule, pinned downloads)
+metadata/                      specification, codelists, windows, explained differences
+tests/testthat/                tests
+python/                        independent checks
+outputs/                       tables, figures; outputs/qc/ holds the QC reports
+data/adam/                     .xpt files, define.xml, define.html
+docs/sap.md                    analysis rules
+docs/adrg.md                   analysis data reviewer's guide
+docs/implementation-notes.md   technical notes and checked facts
 ```
-
-## Results
-
-`run_all.R` ends with:
-
-```
-[ FAIL 0 | WARN 0 | SKIP 0 | PASS 163 ]
-All programs run and all tests passed.
-```
-
-Change from baseline in ALT by visit (excerpt of `outputs/t2_alt_change_by_visit.txt`):
-
-```
-——————————————————————————————————————————————————————————————————————————
-                      Placebo   Xanomeline Low Dose   Xanomeline High Dose
-                      (N=86)          (N=84)                 (N=84)       
-——————————————————————————————————————————————————————————————————————————
-AVISIT                                                                    
-  SCREENING 1                                                             
-    n                   86              82                     84         
-    Mean BASE          17.5            17.9                   19.1        
-    Mean AVAL          17.6            18.0                   19.2        
-    Mean CHG            0.1             0.1                   0.1         
-  WEEK 2                                                                  
-    n                   83              80                     78         
-    Mean BASE          17.7            18.1                   19.2        
-    Mean AVAL          18.0            20.9                   21.0        
-    Mean CHG            0.3             2.8                   1.7
-```
-
-The same rows, drawn (`outputs/f1_alt_chg_by_visit.png`). The program that draws it stops if any plotted mean differs from the table cell:
-
-![Mean change from baseline in ALT by visit and treatment arm](outputs/f1_alt_chg_by_visit.png)
-
-The full tables, the `.xpt` files and a printed traceability trace are in `outputs/` and `data/adam/`.
 
 ## Traceability
 
-One value, followed from SDTM to a table cell:
+One value, followed from SDTM to a table cell (`outputs/t2_traceability_chain.txt`):
 
 ```
 LB    01-701-1028  LBSEQ 135  ALT  WEEK 8  LBSTRESN 33
@@ -94,23 +96,12 @@ ADLB  01-701-1028  ASEQ 5     ALT  WEEK 8  AVAL 33  BASE 26  CHG 7
 Table 2 / WEEK 8 / Mean CHG / Xanomeline High Dose
 ```
 
-ADLB keeps `LBSEQ`, `VISIT` and `LBSTRESN` next to the analysis variables so every row can be traced back to its source record. The table program only filters and averages existing columns.
-
-## Choices made here
-
-There is no protocol or analysis plan for the pilot data, so these are my decisions:
-
-- Baseline: last non-missing value on or before first dose, ties broken by `LBSEQ`.
-- `SAFFL`: at least one dose, counting 0 mg placebo as a dose. `ITTFL`: randomised.
-- `TRTEMFL`: onset on or after first dose.
-- `CHG` is populated on every row, including pre-baseline rows.
-- Unscheduled visits are grouped under one `AVISIT`; no visit windows.
-- Figure 1 draws only visits with at least 10 subjects in every arm; Table 2 keeps every scheduled visit.
+ADLB keeps `LBSEQ`, `VISIT` and `LBSTRESN`, ADAE keeps `AESEQ`, ADQSADAS keeps `QSSEQ`, and ADTTE records `SRCDOM`/`SRCVAR`/`SRCSEQ`. define.xml gives the origin and derivation of every variable.
 
 ## Scope
 
-Self-directed learning project on public test data. Not study work, not validated, no define.xml, no conformance run. Real study data would add partial dates, visit windows, multiple treatment periods and a define.xml; none of that is exercised here.
+Portfolio project on public test data, not a regulatory submission. Real study work would add a protocol-specific SAP, validated double programming, laboratory visit windows and a complete set of efficacy and safety parameters. The pilot data carry no MedDRA codes and no protocol deviations.
 
 ## Licence
 
-MIT. Source data belongs to `{pharmaversesdtm}`.
+MIT. Source data belong to `{pharmaversesdtm}` and the CDISC pilot project (via `phuse-scripts`); they are downloaded at run time, not redistributed.

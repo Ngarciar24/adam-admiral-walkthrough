@@ -1,27 +1,37 @@
-# ---------------------------------------------------------------------------
-# run_all.R -- rebuild every ADaM dataset, then run the test suite.
-#
-#   Rscript run_all.R
-#
-# Programs are numbered and run in dependency order: ADSL first, because every
-# other dataset merges ADSL variables onto itself. This mirrors how a real study
-# is organised -- one program per dataset, run in a fixed, documented order --
-# rather than one monolithic script.
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Program    : run_all.R
+# Study      : CDISCPILOT01 (public CDISC pilot test data, {pharmaversesdtm})
+# Purpose    : Rebuild all ADaM datasets, XPT files, define.xml, tables and
+#              figures in dependency order, compare with the published pilot
+#              ADaM, then run the test suite
+# Usage      : Rscript run_all.R   (from the project root)
+# Author     : Ignacio G. Ribelles
+# Created    : 2026-09-16
+# Change log : 2026-09-16  IGR  Initial version
+#              2026-09-25  IGR  Standard header; comments condensed
+#              2026-09-25  IGR  ADTTE, ADQSADAS, efficacy/TTE tables,
+#                               define.xml and pilot comparison added
+# -----------------------------------------------------------------------------
 
 stopifnot(file.exists("programs/00_setup.R"))
 
 core <- c(
   "programs/01_adsl.R",
   "programs/02_adlb.R",
-  "programs/03_adae.R"
+  "programs/03_adae.R",
+  "programs/04_adtte.R",
+  "programs/05_adqsadas.R"
 )
 
-# Stretch programs: exports and tables. Skipped silently if not present.
+# Exports, tables, figures, define.xml and the pilot comparison.
+# Skipped with a message if not present.
 stretch <- c(
   "programs/90_export_xpt.R",
   "programs/91_tables.R",
-  "programs/92_figures.R"
+  "programs/92_figures.R",
+  "programs/93_tables_tte_eff.R",
+  "programs/94_define.R",
+  "programs/95_compare_pilot.R"
 )
 
 run_one <- function(path) {
@@ -30,26 +40,8 @@ run_one <- function(path) {
     return(invisible(NULL))
   }
   message("\n==> ", path)
-  # NOTE -- these are sourced into the GLOBAL environment, deliberately.
-  #
-  # The obvious choice is source(path, local = new.env()) for isolation, and it
-  # FAILS here. admiral's list-valued arguments are built with rlang::exprs(),
-  # which returns a bare `call` with NO environment attached (rlang::quos() is
-  # the variant that captures one -- verify with
-  #   attr(exprs(f(x))[[1]], ".Environment")  -> NULL
-  #   quo_get_env(quos(f(x))[[1]])            -> <environment>
-  # ).
-  #
-  # So when derive_vars_merged() evaluates a user function inside a new_vars
-  # expression -- here new_vars = exprs(EOSSTT = format_eosstt(DSDECOD)) in
-  # 01_adsl.R -- the lookup resolves against the global environment, not the
-  # environment the program was sourced into. Sourcing locally produces
-  #   Error in format_eosstt(): could not find function "format_eosstt"
-  # which is confusing precisely because running the same program directly with
-  # Rscript works fine.
-  #
-  # This is a real property of the admiral idiom worth knowing: any helper
-  # function referenced inside exprs() must be visible globally.
+  # Sourced into the global environment on purpose: functions used inside
+  # admiral exprs() (e.g. format_eosstt() in 01_adsl.R) are looked up there.
   source(path, echo = FALSE)
 }
 

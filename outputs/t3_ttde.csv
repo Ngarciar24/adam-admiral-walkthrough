@@ -1,0 +1,8 @@
+avar_name,row_name,label_name,row_num,is_group_summary,node_class,V1,V2,V3
+"Subjects with event, n (%)","Subjects with event, n (%)","Subjects with event, n (%)",1,FALSE,DataRow,29 (33.7%),63 (65.6%),60 (83.3%)
+"Subjects censored, n (%)","Subjects censored, n (%)","Subjects censored, n (%)",2,FALSE,DataRow,57 (66.3%),33 (34.4%),12 (16.7%)
+"Median time to event, days (95% CI)","Median time to event, days (95% CI)","Median time to event, days (95% CI)",3,FALSE,DataRow,"NE (NE, NE)","34 (27, 48)","31 (22, 46)"
+"Event-free at day 28, %","Event-free at day 28, %","Event-free at day 28, %",4,FALSE,DataRow,84.4,58.1,56.8
+"Event-free at day 84, %","Event-free at day 84, %","Event-free at day 84, %",5,FALSE,DataRow,68.5,24.1,15.5
+Hazard ratio vs placebo (95% CI),Hazard ratio vs placebo (95% CI),Hazard ratio vs placebo (95% CI),6,FALSE,DataRow,,"4.03 (2.56, 6.34)","5.06 (3.17, 8.06)"
+Log-rank p-value vs placebo,Log-rank p-value vs placebo,Log-rank p-value vs placebo,7,FALSE,DataRow,,<0.001,<0.001

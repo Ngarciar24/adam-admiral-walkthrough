@@ -1,0 +1,9 @@
+avar_name,row_name,label_name,row_num,is_group_summary,node_class,V1,V2,V3
+"Baseline, mean (SD)","Baseline, mean (SD)","Baseline, mean (SD)",1,FALSE,DataRow,24.1 (12.19),24.4 (12.92),21.3 (11.74)
+"Week 24, mean (SD)","Week 24, mean (SD)","Week 24, mean (SD)",2,FALSE,DataRow,26.7 (13.79),26.4 (13.18),22.8 (12.48)
+"Change from baseline, mean (SD)","Change from baseline, mean (SD)","Change from baseline, mean (SD)",3,FALSE,DataRow,2.5 (5.80),2.0 (5.55),1.5 (4.26)
+"  of which Week 24 value by LOCF, n","  of which Week 24 value by LOCF, n","  of which Week 24 value by LOCF, n",4,FALSE,DataRow,14,32,33
+LS mean change (SE),LS mean change (SE),LS mean change (SE),5,FALSE,DataRow,2.5 (0.60),2.0 (0.59),1.5 (0.62)
+LS mean difference vs placebo (95% CI),LS mean difference vs placebo (95% CI),LS mean difference vs placebo (95% CI),6,FALSE,DataRow,,"-0.5 (-2.1, 1.1)","-1.0 (-2.7, 0.7)"
+p-value vs placebo,p-value vs placebo,p-value vs placebo,7,FALSE,DataRow,,0.569,0.233
+Dose-response p-value,Dose-response p-value,Dose-response p-value,8,FALSE,DataRow,0.245,,

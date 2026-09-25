@@ -1,17 +1,12 @@
 Table 2. Alanine Aminotransferase (U/L): Observed Value and Change from Baseline by Visit
 Safety Population (SAFFL = 'Y'); PARAMCD = 'ALT'
-Unscheduled visits excluded
+Post-baseline records (ADT after first dose); unscheduled visits excluded
 
 ——————————————————————————————————————————————————————————————————————————
                       Placebo   Xanomeline Low Dose   Xanomeline High Dose
-                      (N=86)          (N=84)                 (N=84)       
+                      (N=84)          (N=82)                 (N=80)       
 ——————————————————————————————————————————————————————————————————————————
 AVISIT                                                                    
-  SCREENING 1                                                             
-    n                   86              82                     84         
-    Mean BASE          17.5            17.9                   19.1        
-    Mean AVAL          17.6            18.0                   19.2        
-    Mean CHG            0.1             0.1                   0.1         
   WEEK 2                                                                  
     n                   83              80                     78         
     Mean BASE          17.7            18.1                   19.2        

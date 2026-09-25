@@ -1,0 +1,76 @@
+ADaM CONFORMANCE CHECKS (python/adam_conformance.py)
+Checks follow ADaMIG requirements; CDISC CORE publishes no ADaM rules yet.
+
+PASS  GEN-01   ADSL      STUDYID and USUBJID present and never missing
+PASS  GEN-02   ADSL      variable names: at most 8 characters, uppercase letters and digits, first a letter
+PASS  GEN-03   ADSL      every USUBJID exists in ADSL
+PASS  GEN-04   ADSL      population flags are Y or N, never missing
+PASS  GEN-05   ADSL      record-level flags (ABLFL, ANLxxFL, TRTEMFL, AOCCxxFL) are Y or null
+PASS  GEN-06   ADSL      study-day variables (*DY) are never 0
+PASS  GEN-07   ADSL      date variables (*DT) are numeric
+PASS  GEN-01   ADLB      STUDYID and USUBJID present and never missing
+PASS  GEN-02   ADLB      variable names: at most 8 characters, uppercase letters and digits, first a letter
+PASS  GEN-03   ADLB      every USUBJID exists in ADSL
+PASS  GEN-04   ADLB      population flags are Y or N, never missing
+PASS  GEN-05   ADLB      record-level flags (ABLFL, ANLxxFL, TRTEMFL, AOCCxxFL) are Y or null
+PASS  GEN-06   ADLB      study-day variables (*DY) are never 0
+PASS  GEN-07   ADLB      date variables (*DT) are numeric
+PASS  GEN-08   ADLB      ADSL variables carried over match ADSL (10 variables)
+PASS  GEN-01   ADAE      STUDYID and USUBJID present and never missing
+PASS  GEN-02   ADAE      variable names: at most 8 characters, uppercase letters and digits, first a letter
+PASS  GEN-03   ADAE      every USUBJID exists in ADSL
+PASS  GEN-04   ADAE      population flags are Y or N, never missing
+PASS  GEN-05   ADAE      record-level flags (ABLFL, ANLxxFL, TRTEMFL, AOCCxxFL) are Y or null
+PASS  GEN-06   ADAE      study-day variables (*DY) are never 0
+PASS  GEN-07   ADAE      date variables (*DT) are numeric
+PASS  GEN-08   ADAE      ADSL variables carried over match ADSL (7 variables)
+PASS  GEN-01   ADTTE     STUDYID and USUBJID present and never missing
+PASS  GEN-02   ADTTE     variable names: at most 8 characters, uppercase letters and digits, first a letter
+PASS  GEN-03   ADTTE     every USUBJID exists in ADSL
+PASS  GEN-04   ADTTE     population flags are Y or N, never missing
+PASS  GEN-05   ADTTE     record-level flags (ABLFL, ANLxxFL, TRTEMFL, AOCCxxFL) are Y or null
+PASS  GEN-06   ADTTE     study-day variables (*DY) are never 0
+PASS  GEN-07   ADTTE     date variables (*DT) are numeric
+PASS  GEN-08   ADTTE     ADSL variables carried over match ADSL (7 variables)
+PASS  GEN-01   ADQSADAS  STUDYID and USUBJID present and never missing
+PASS  GEN-02   ADQSADAS  variable names: at most 8 characters, uppercase letters and digits, first a letter
+PASS  GEN-03   ADQSADAS  every USUBJID exists in ADSL
+PASS  GEN-04   ADQSADAS  population flags are Y or N, never missing
+PASS  GEN-05   ADQSADAS  record-level flags (ABLFL, ANLxxFL, TRTEMFL, AOCCxxFL) are Y or null
+PASS  GEN-06   ADQSADAS  study-day variables (*DY) are never 0
+PASS  GEN-07   ADQSADAS  date variables (*DT) are numeric
+PASS  GEN-08   ADQSADAS  ADSL variables carried over match ADSL (9 variables)
+PASS  ADSL-01  ADSL      one record per subject
+PASS  ADSL-02  ADSL      TRT01P and TRT01PN populated for every ITT subject
+PASS  ADSL-03  ADSL      TRT01P and TRT01PN map one to one
+PASS  ADSL-03  ADSL      TRT01A and TRT01AN map one to one
+PASS  ADSL-04  ADSL      TRTSDT is not after TRTEDT
+PASS  BDS-01   ADLB      PARAMCD at most 8 characters, letters/digits, first a letter
+PASS  BDS-02   ADLB      PARAMCD and PARAM map one to one
+PASS  BDS-03   ADLB      every record has AVAL or AVALC
+PASS  BDS-04   ADLB      at most one ABLFL = 'Y' per subject and parameter
+PASS  BDS-05   ADLB      BASE equals AVAL of the baseline record
+PASS  BDS-06   ADLB      CHG = AVAL - BASE wherever CHG is populated
+PASS  BDS-07   ADLB      CHG is not populated on the baseline record
+PASS  BDS-08   ADLB      AVISIT and AVISITN map one to one
+PASS  BDS-01   ADTTE     PARAMCD at most 8 characters, letters/digits, first a letter
+PASS  BDS-02   ADTTE     PARAMCD and PARAM map one to one
+PASS  BDS-03   ADTTE     every record has AVAL or AVALC
+PASS  BDS-01   ADQSADAS  PARAMCD at most 8 characters, letters/digits, first a letter
+PASS  BDS-02   ADQSADAS  PARAMCD and PARAM map one to one
+PASS  BDS-03   ADQSADAS  every record has AVAL or AVALC
+PASS  BDS-04   ADQSADAS  at most one ABLFL = 'Y' per subject and parameter
+PASS  BDS-05   ADQSADAS  BASE equals AVAL of the baseline record
+PASS  BDS-06   ADQSADAS  CHG = AVAL - BASE wherever CHG is populated
+PASS  BDS-07   ADQSADAS  CHG is not populated on the baseline record
+PASS  BDS-08   ADQSADAS  AVISIT and AVISITN map one to one
+PASS  BDS-09   ADQSADAS  derived records (DTYPE populated) are analysis records
+PASS  TTE-01   ADTTE     CNSR is 0 (event) or a positive integer (censored)
+PASS  TTE-02   ADTTE     STARTDT is not after ADT
+PASS  TTE-03   ADTTE     AVAL is non-negative
+PASS  TTE-04   ADTTE     EVNTDESC populated on every record
+PASS  OCC-01   ADAE      ASTDT is not after AENDT
+PASS  OCC-02   ADAE      ASTDTF populated only where ASTDT exists
+PASS  OCC-03   ADAE      no BDS variables (PARAMCD, AVAL, BASE, CHG) in an OCCDS dataset
+
+71 checks, 0 failed
