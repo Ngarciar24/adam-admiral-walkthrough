@@ -1,22 +1,20 @@
-# ---------------------------------------------------------------------------
-# derive_ablfl.R -- the baseline rule, as one function shared by the ADLB
-# program and its unit tests.
-#
-# Rule (see README "Choices made here"): the baseline record for a subject and
-# parameter is the LAST record with a non-missing AVAL dated on or before the
-# first dose (ADT <= TRTSDT), ties on ADT broken by LBSEQ. BASE is that
-# record's AVAL, carried onto every row of the subject/parameter.
-#
-# This lives in its own file so that programs/02_adlb.R and
-# tests/testthat/test-adlb.R call the SAME code. Before this refactor the test
-# file held a hand-copied version of these two calls, which could drift from
-# the program without any test noticing.
-#
-# Requirements on `dat`: STUDYID, USUBJID, PARAMCD, ADT, LBSEQ, AVAL, TRTSDT.
-# Adds ABLFL and BASE. Never drops or duplicates a row. Row ORDER is not
-# preserved (restrict_derivation() binds the flagged rows back first), so the
-# caller must arrange() afterwards if order matters.
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Program    : derive_ablfl.R
+# Study      : CDISCPILOT01 (public CDISC pilot test data, {pharmaversesdtm})
+# Purpose    : Baseline rule for ADLB, shared by programs/02_adlb.R and
+#              tests/testthat/test-adlb.R so both run the same code
+# Inputs     : Data frame with STUDYID, USUBJID, PARAMCD, ADT, LBSEQ, AVAL, TRTSDT
+# Outputs    : Same rows with ABLFL and BASE added
+# Author     : Ignacio G. Ribelles
+# Created    : 2026-09-17
+# Change log : 2026-09-17  IGR  Initial version (moved out of 02_adlb.R)
+#              2026-09-25  IGR  Standard header
+# Notes      : Rule: the baseline record is the last record with non-missing
+#              AVAL dated on or before first dose (ADT <= TRTSDT), ties on ADT
+#              broken by LBSEQ. BASE is its AVAL, carried onto every row of the
+#              subject/parameter. Rows are neither dropped nor duplicated, but
+#              their order is not preserved.
+# -----------------------------------------------------------------------------
 
 derive_ablfl_base <- function(dat) {
   dat %>%
