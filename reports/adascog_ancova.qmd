@@ -1,0 +1,512 @@
+---
+title: "ADAS-Cog(11) Week 24 ANCOVA"
+subtitle: "CDISCPILOT01: primary efficacy analysis from the ADaM datasets"
+author: "Ignacio G. Ribelles"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-fold: true
+    code-summary: "Code"
+    embed-resources: true
+    df-print: kable
+execute:
+  echo: true
+  warning: false
+  message: false
+knitr:
+  opts_knit:
+    root.dir: ".."
+  opts_chunk:
+    fig.width: 7.5
+    fig.height: 4.5
+    dpi: 150
+---
+
+<!--
+Program    : reports/adascog_ancova.qmd
+Study      : CDISCPILOT01 (public CDISC pilot test data)
+Purpose    : Report on the primary efficacy analysis: ADAS-Cog(11) change from
+             baseline to Week 24 (LOCF), ANCOVA, with model checks and
+             sensitivity analyses
+Inputs     : data/adam/adqsadas.xpt (committed transport file)
+             outputs/t4_adascog_wk24_ancova.csv (Table 4 as produced by
+             programs/93_tables_tte_eff.R)
+Outputs    : reports/adascog_ancova.html
+Author     : Ignacio G. Ribelles
+Created    : 2026-10-10
+Change log : 2026-10-10  IGR  Initial version
+Notes      : Reads the transport file, not the .rds, so it renders without
+             re-running run_all.R. Code runs from the project root
+             (knitr root.dir). The render stops if Table 4 rebuilt here
+             differs from outputs/t4_adascog_wk24_ancova.csv in any cell.
+-->
+
+```{r setup}
+library(haven)
+library(dplyr)
+library(readr)
+library(rtables)
+library(emmeans)
+library(ggplot2)
+
+adqsadas_path <- "data/adam/adqsadas.xpt"
+t4_csv_path   <- "outputs/t4_adascog_wk24_ancova.csv"
+
+trt_levels <- c("Placebo", "Xanomeline Low Dose", "Xanomeline High Dose")
+# Okabe-Ito, as in programs/92_figures.R
+trt_colours <- c("Placebo" = "#0072B2", "Xanomeline Low Dose" = "#E69F00",
+                 "Xanomeline High Dose" = "#D55E00")
+
+# Formatting helpers, identical to programs/93_tables_tte_eff.R
+fmt_p <- function(p) if (is.na(p)) "NA" else if (p < 0.001) "<0.001" else sprintf("%.3f", p)
+fmt_ci <- function(est, lo, hi, d = 1) {
+  f <- function(x) if (is.na(x)) "NE" else formatC(x, format = "f", digits = d)
+  paste0(f(est), " (", f(lo), ", ", f(hi), ")")
+}
+
+# SAS transport stores missing character values as "".
+adqsadas <- read_xpt(adqsadas_path) %>%
+  mutate(across(where(is.character), ~ na_if(.x, "")))
+```
+
+# Purpose
+
+This report covers the primary efficacy analysis of the CDISC pilot study
+CDISCPILOT01. The endpoint is the change from baseline in the ADAS-Cog(11) total
+score at Week 24, with missing Week 24 values imputed by last observation
+carried forward (LOCF). The analysis is an ANCOVA in the efficacy population.
+
+The report reads the submission-ready transport file `r adqsadas_path` and
+rebuilds Table 4 from it. It then:
+
+- checks that Table 4 is identical to the table produced by
+  `programs/93_tables_tte_eff.R`;
+- shows the model in full and checks its assumptions;
+- adds exploratory sensitivity analyses to the LOCF result.
+
+Analysis conventions (populations, windows, LOCF) are in
+[`docs/sap.md`](../docs/sap.md). The dataset context is in
+[`docs/adrg.md`](../docs/adrg.md).
+
+# Analysis set
+
+The analysis records are the ADAS-Cog total score (`PARAMCD = "ACTOT"`)
+records that meet all of the following:
+
+- in the efficacy population (`EFFFL = "Y"`);
+- in the Week 24 window (`AVISITN = 24`);
+- flagged as analysed (`ANL01FL = "Y"`).
+
+Treatment is planned treatment (`TRTP`). These are the same records as in
+`programs/93_tables_tte_eff.R`.
+
+```{r analysis-set}
+wk24 <- adqsadas %>%
+  filter(PARAMCD == "ACTOT", EFFFL == "Y", AVISITN == 24, ANL01FL == "Y") %>%
+  mutate(TRTP = factor(TRTP, levels = trt_levels))
+
+stopifnot(
+  nrow(wk24) == n_distinct(wk24$USUBJID),  # one analysed Week 24 record per subject
+  !anyNA(wk24$CHG),
+  !anyNA(wk24$BASE),
+  !anyNA(wk24$SITEGR1)
+)
+
+effpop <- adqsadas %>%
+  filter(PARAMCD == "ACTOT", EFFFL == "Y") %>%
+  distinct(USUBJID, TRTP) %>%
+  count(TRTP = factor(TRTP, levels = trt_levels), name = "Efficacy population")
+
+wk24 %>%
+  group_by(TRTP) %>%
+  summarise(
+    `Analysed at Week 24` = n(),
+    `Observed at Week 24` = sum(is.na(DTYPE)),
+    `Imputed by LOCF`     = sum(DTYPE %in% "LOCF"),
+    `Week 24 completers (COMP24FL)` = sum(COMP24FL %in% "Y"),
+    .groups = "drop"
+  ) %>%
+  left_join(effpop, by = "TRTP") %>%
+  relocate(`Efficacy population`, .after = TRTP) %>%
+  rename(Treatment = TRTP)
+```
+
+The proportion of LOCF-imputed values is much higher in the two xanomeline arms
+than in placebo. That difference comes from more early discontinuations in the
+active arms. It is the main reason for the sensitivity analyses in
+@sec-sensitivity.
+
+# Descriptive summary
+
+```{r by-visit}
+by_visit <- adqsadas %>%
+  filter(PARAMCD == "ACTOT", EFFFL == "Y", ANL01FL == "Y") %>%
+  mutate(TRTP = factor(TRTP, levels = trt_levels),
+         AVISIT = reorder(factor(AVISIT), AVISITN)) %>%
+  group_by(TRTP, AVISITN, AVISIT) %>%
+  summarise(n = n(), mean = mean(AVAL), sd = sd(AVAL), se = sd / sqrt(n),
+            n_locf = sum(DTYPE %in% "LOCF"), .groups = "drop")
+
+by_visit %>%
+  transmute(Treatment = TRTP, Visit = AVISIT, n,
+            `Mean (SD)` = sprintf("%.1f (%.2f)", mean, sd),
+            `of which LOCF` = n_locf)
+```
+
+```{r fig-by-visit}
+#| fig-cap: "ADAS-Cog(11) total score by analysis visit, mean ± 1 SE (efficacy population, LOCF). Higher scores indicate worse cognition."
+ggplot(by_visit, aes(AVISITN, mean, colour = TRTP, shape = TRTP)) +
+  geom_line(position = position_dodge(width = 1.5)) +
+  geom_point(size = 2.5, position = position_dodge(width = 1.5)) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width = 1.5,
+                position = position_dodge(width = 1.5)) +
+  scale_x_continuous(breaks = c(0, 8, 16, 24),
+                     labels = c("Baseline", "Week 8", "Week 16", "Week 24")) +
+  scale_colour_manual(values = trt_colours) +
+  labs(x = NULL, y = "ADAS-Cog(11) total score", colour = NULL, shape = NULL) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom", panel.grid.minor = element_blank())
+```
+
+```{r fig-chg-dist}
+#| fig-cap: "Distribution of change from baseline to Week 24 (LOCF) by treatment. Diamonds mark the arm mean."
+ggplot(wk24, aes(TRTP, CHG, fill = TRTP)) +
+  geom_hline(yintercept = 0, colour = "grey60") +
+  geom_boxplot(alpha = 0.35, outlier.shape = NA, width = 0.5) +
+  geom_jitter(aes(colour = TRTP), width = 0.12, height = 0, alpha = 0.6, size = 1.4) +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 3.5, fill = "white") +
+  scale_fill_manual(values = trt_colours, guide = "none") +
+  scale_colour_manual(values = trt_colours, guide = "none") +
+  labs(x = NULL, y = "Change from baseline at Week 24") +
+  theme_minimal(base_size = 12) +
+  theme(panel.grid.minor = element_blank())
+```
+
+# Primary analysis: Table 4
+
+The model is an ANCOVA:
+
+$$
+\text{CHG}_i = \mu + \tau_{\text{TRTP}(i)} + \gamma_{\text{SITEGR1}(i)} + \beta \cdot \text{BASE}_i + \varepsilon_i,
+\qquad \varepsilon_i \sim N(0, \sigma^2)
+$$
+
+- **Least-squares means.** Computed with {emmeans}, averaging over pooled site
+  with equal weights.
+- **Comparisons with placebo.** Not adjusted for multiplicity.
+- **Dose-response test.** The same model with dose (0, 54, 81 mg, `TRTPN`) as a
+  continuous term in place of the treatment factor.
+
+```{r ancova}
+by_arm <- wk24 %>%
+  group_by(TRTP, .drop = FALSE) %>%
+  summarise(
+    n      = n(),
+    base   = sprintf("%.1f (%.2f)", mean(BASE), sd(BASE)),
+    wk     = sprintf("%.1f (%.2f)", mean(AVAL), sd(AVAL)),
+    chg    = sprintf("%.1f (%.2f)", mean(CHG), sd(CHG)),
+    n_locf = sum(DTYPE %in% "LOCF"),
+    .groups = "drop"
+  )
+
+fit   <- lm(CHG ~ TRTP + SITEGR1 + BASE, data = wk24)
+emm   <- emmeans(fit, ~ TRTP)
+lsm   <- summary(emm)
+diffs <- summary(contrast(emm, method = "trt.vs.ctrl", ref = 1, adjust = "none"),
+                 infer = c(TRUE, TRUE))
+
+dose_fit <- lm(CHG ~ TRTPN + SITEGR1 + BASE, data = wk24)
+p_dose   <- summary(dose_fit)$coefficients["TRTPN", "Pr(>|t|)"]
+
+t4 <- rtable(
+  header = rheader(rrow("", trt_levels[1], trt_levels[2], trt_levels[3]),
+                   rrow("", paste0("(N=", by_arm$n[1], ")"), paste0("(N=", by_arm$n[2], ")"),
+                        paste0("(N=", by_arm$n[3], ")"))),
+  rrow("Baseline, mean (SD)", by_arm$base[1], by_arm$base[2], by_arm$base[3]),
+  rrow("Week 24, mean (SD)", by_arm$wk[1], by_arm$wk[2], by_arm$wk[3]),
+  rrow("Change from baseline, mean (SD)", by_arm$chg[1], by_arm$chg[2], by_arm$chg[3]),
+  rrow("  of which Week 24 value by LOCF, n", by_arm$n_locf[1], by_arm$n_locf[2],
+       by_arm$n_locf[3]),
+  rrow("LS mean change (SE)",
+       sprintf("%.1f (%.2f)", lsm$emmean[1], lsm$SE[1]),
+       sprintf("%.1f (%.2f)", lsm$emmean[2], lsm$SE[2]),
+       sprintf("%.1f (%.2f)", lsm$emmean[3], lsm$SE[3])),
+  rrow("LS mean difference vs placebo (95% CI)", "",
+       fmt_ci(diffs$estimate[1], diffs$lower.CL[1], diffs$upper.CL[1]),
+       fmt_ci(diffs$estimate[2], diffs$lower.CL[2], diffs$upper.CL[2])),
+  rrow("p-value vs placebo", "", fmt_p(diffs$p.value[1]), fmt_p(diffs$p.value[2])),
+  rrow("Dose-response p-value", fmt_p(p_dose), "", "")
+)
+main_title(t4) <- "Table 4. ADAS-Cog(11) Total Score: Change from Baseline to Week 24 (LOCF)"
+subtitles(t4)  <- "Efficacy Population (EFFFL = 'Y'); planned treatment (TRTP)"
+main_footer(t4) <- c(
+  "ANCOVA: CHG = treatment + pooled site (SITEGR1) + baseline score. LS means from emmeans;",
+  "differences and p-values unadjusted for multiplicity. Dose-response: same model with dose",
+  "(0, 54, 81 mg) as a continuous term. Week 24 window: study day > 140; LOCF from the last",
+  "analysed value (ANL01FL = 'Y'). Higher ADAS-Cog scores indicate worse cognition."
+)
+prov_footer(t4) <- "Source: ADQSADAS (PARAMCD = 'ACTOT') | data/adam/adqsadas.xpt"
+```
+
+::: {.column-page-right}
+```{r table4}
+#| html-table-processing: none
+as_html(t4)
+```
+:::
+
+<details><summary>Plain-text version (as submitted)</summary>
+
+```{r table4-txt}
+#| class-output: "small"
+cat(toString(t4))
+```
+
+</details>
+
+## Agreement with the program output
+
+The table above is compared cell by cell with
+`r t4_csv_path`, the result data written by
+`programs/93_tables_tte_eff.R`. The render stops if any cell differs. This way
+the report and the program cannot drift apart.
+
+```{r agreement}
+cells <- function(df) {
+  df <- as.data.frame(df)
+  vals <- df[, utils::tail(names(df), 3)]
+  vals[] <- lapply(vals, function(x) ifelse(is.na(x), "", as.character(x)))
+  cbind(row = df$row_name, vals)
+}
+report_cells  <- cells(as_result_df(t4, data_format = "strings"))
+program_cells <- cells(read_csv(t4_csv_path, col_types = cols(.default = "c"),
+                                trim_ws = FALSE, na = character()))
+names(report_cells) <- names(program_cells) <- c("Row", trt_levels)
+
+same <- dim(report_cells) == dim(program_cells)
+stopifnot(all(same))
+match_mat <- as.matrix(report_cells) == as.matrix(program_cells)
+stopifnot("Table 4 in the report differs from outputs/t4_adascog_wk24_ancova.csv" =
+            all(match_mat))
+
+tibble(
+  `Cells compared` = length(match_mat),
+  `Identical`      = sum(match_mat),
+  `Different`      = sum(!match_mat)
+)
+```
+
+The Ns, the differences from placebo, their 95% confidence intervals and the
+p-values are equal to the published pilot table. The R Consortium submission
+pilot reproduces that table
+([tlf-primary](https://rconsortium.github.io/submissions-pilot1/articles/tlf-primary.html)).
+
+# Model details
+
+## Analysis of variance
+
+```{r anova}
+fmt_aov <- function(a) {
+  data.frame(Term = rownames(a), Df = a$Df,
+             `Sum Sq` = round(a$`Sum Sq`, 2),
+             `F value` = round(a$`F value`, 3),
+             `Pr(>F)` = vapply(a$`Pr(>F)`, fmt_p, ""),
+             check.names = FALSE, row.names = NULL)
+}
+type3 <- drop1(fit, test = "F")
+type3 <- data.frame(Df = type3$Df, `Sum Sq` = type3$`Sum of Sq`,
+                    `F value` = type3$`F value`, `Pr(>F)` = type3$`Pr(>F)`,
+                    row.names = rownames(type3), check.names = FALSE)[-1, ]
+fmt_aov(type3)
+```
+
+These are Type III-style tests: each term is dropped from the full model in
+turn. The overall test for treatment uses 2 degrees of freedom, so it is a
+different test from the pairwise comparisons in Table 4.
+
+## Parameter estimates
+
+```{r coefs}
+co <- summary(fit)$coefficients
+ci <- confint(fit)
+data.frame(
+  Term       = rownames(co),
+  Estimate   = round(co[, "Estimate"], 3),
+  SE         = round(co[, "Std. Error"], 3),
+  `95% CI`   = sprintf("(%.2f, %.2f)", ci[, 1], ci[, 2]),
+  `p-value`  = vapply(co[, "Pr(>|t|)"], fmt_p, ""),
+  check.names = FALSE, row.names = NULL
+)
+```
+
+- Residual SD: `r sprintf("%.2f", sigma(fit))`
+- Residual degrees of freedom: `r df.residual(fit)`
+- R²: `r sprintf("%.3f", summary(fit)$r.squared)`
+
+## LS means and differences
+
+```{r fig-forest}
+#| fig-cap: "LS mean difference from placebo in change from baseline to Week 24, with 95% CI. Negative values favour xanomeline."
+#| fig-height: 2.6
+forest <- as.data.frame(diffs) %>%
+  mutate(contrast = sub(" - Placebo", "", contrast),
+         contrast = factor(contrast, levels = rev(trt_levels[-1])))
+ggplot(forest, aes(estimate, contrast)) +
+  geom_vline(xintercept = 0, colour = "grey50", linetype = 2) +
+  geom_errorbarh(aes(xmin = lower.CL, xmax = upper.CL), height = 0.15) +
+  geom_point(size = 3, colour = trt_colours[as.character(forest$contrast)]) +
+  labs(x = "Difference vs placebo (points)", y = NULL) +
+  theme_minimal(base_size = 12) +
+  theme(panel.grid.minor = element_blank())
+```
+
+# Model checks
+
+```{r fig-diagnostics}
+#| fig-cap: "Residual diagnostics for the primary ANCOVA: residuals against fitted values (left) and normal Q-Q plot (right)."
+#| fig-height: 3.6
+diag_df <- data.frame(fitted = fitted(fit), resid = rstandard(fit), TRTP = wk24$TRTP)
+op <- par(mfrow = c(1, 2), mar = c(4, 4, 1, 1))
+plot(diag_df$fitted, diag_df$resid, pch = 19, cex = 0.6,
+     col = adjustcolor(trt_colours[as.character(diag_df$TRTP)], 0.7),
+     xlab = "Fitted value", ylab = "Standardised residual")
+abline(h = 0, col = "grey50", lty = 2)
+qqnorm(diag_df$resid, main = "", pch = 19, cex = 0.6, col = "grey30")
+qqline(diag_df$resid, col = "grey50", lty = 2)
+par(op)
+```
+
+```{r assumptions}
+slopes <- anova(fit, lm(CHG ~ TRTP * BASE + SITEGR1, data = wk24))
+levene <- anova(lm(abs(resid(fit) - ave(resid(fit), wk24$TRTP, FUN = median)) ~ TRTP,
+                   data = wk24))
+sw <- shapiro.test(resid(fit))
+
+tibble(
+  Check = c("Homogeneity of slopes (treatment x baseline)",
+            "Equal residual variance across arms (Brown-Forsythe)",
+            "Normality of residuals (Shapiro-Wilk)"),
+  Statistic = c(sprintf("F = %.2f on %d df", slopes$F[2], slopes$Df[2]),
+                sprintf("F = %.2f on %d df", levene$`F value`[1], levene$Df[1]),
+                sprintf("W = %.3f", sw$statistic)),
+  `p-value` = c(fmt_p(slopes$`Pr(>F)`[2]), fmt_p(levene$`Pr(>F)`[1]), fmt_p(sw$p.value))
+)
+```
+
+The homogeneity-of-slopes test checks the assumption of a common baseline
+slope. With `r nrow(wk24)` subjects, the ANCOVA estimates are robust to moderate
+departures from normality of the residuals. The Q-Q plot is the main guide to
+how large any departure is.
+
+# Sensitivity analyses {#sec-sensitivity}
+
+These analyses are **exploratory**. They are not part of the pre-specified
+analysis in `docs/sap.md`. They test whether the conclusion depends on how
+LOCF handles missing Week 24 values:
+
+1. **Observed cases.** The primary ANCOVA on subjects with an observed (not
+   imputed) Week 24 value.
+2. **Week 24 completers.** The primary ANCOVA restricted to `COMP24FL = "Y"`.
+3. **Mixed model for repeated measures (MMRM).** Uses all observed
+   post-baseline values at Weeks 8, 16 and 24, with no imputation. The model is
+   fitted with `nlme::gls`. Fixed effects: treatment × visit, pooled site and
+   baseline × visit. The within-subject covariance is unstructured. The
+   estimates are the Week 24 contrasts. This model assumes the missing values
+   are missing at random (MAR) rather than LOCF.
+
+```{r sensitivity}
+ancova_diffs <- function(d, label) {
+  f <- lm(CHG ~ TRTP + SITEGR1 + BASE, data = d)
+  s <- summary(contrast(emmeans(f, ~ TRTP), method = "trt.vs.ctrl", ref = 1,
+                        adjust = "none"), infer = c(TRUE, TRUE))
+  n <- table(d$TRTP)
+  data.frame(Analysis = label,
+             N = sprintf("%d / %d / %d", n[1], n[2], n[3]),
+             Comparison = sub(" - Placebo", "", s$contrast),
+             estimate = s$estimate, lower = s$lower.CL, upper = s$upper.CL,
+             p = s$p.value)
+}
+
+obs <- adqsadas %>%
+  filter(PARAMCD == "ACTOT", EFFFL == "Y", ANL01FL == "Y", AVISITN > 0,
+         is.na(DTYPE)) %>%
+  mutate(TRTP = factor(TRTP, levels = trt_levels),
+         AVISIT = factor(AVISITN, levels = c(8, 16, 24),
+                         labels = c("Week 8", "Week 16", "Week 24"))) %>%
+  arrange(USUBJID, AVISITN)
+
+mmrm <- nlme::gls(
+  CHG ~ TRTP * AVISIT + SITEGR1 + BASE * AVISIT,
+  data = obs,
+  correlation = nlme::corSymm(form = ~ as.integer(AVISIT) | USUBJID),
+  weights = nlme::varIdent(form = ~ 1 | AVISIT),
+  method = "REML", na.action = na.omit
+)
+mmrm_s <- summary(contrast(emmeans(mmrm, ~ TRTP | AVISIT, mode = "df.error"),
+                           method = "trt.vs.ctrl", ref = 1, adjust = "none"),
+                  infer = c(TRUE, TRUE)) %>%
+  as.data.frame() %>% filter(AVISIT == "Week 24")
+n_mmrm <- table(distinct(obs, USUBJID, TRTP)$TRTP)
+
+sens <- bind_rows(
+  ancova_diffs(wk24, "Primary: ANCOVA, LOCF"),
+  ancova_diffs(filter(wk24, is.na(DTYPE)), "ANCOVA, observed cases"),
+  ancova_diffs(filter(wk24, COMP24FL %in% "Y"), "ANCOVA, Week 24 completers"),
+  data.frame(Analysis = "MMRM, observed data (MAR)",
+             N = sprintf("%d / %d / %d", n_mmrm[1], n_mmrm[2], n_mmrm[3]),
+             Comparison = sub(" - Placebo", "", mmrm_s$contrast),
+             estimate = mmrm_s$estimate, lower = mmrm_s$lower.CL,
+             upper = mmrm_s$upper.CL, p = mmrm_s$p.value)
+) %>%
+  mutate(Analysis = factor(Analysis, levels = unique(Analysis)))
+
+sens %>%
+  transmute(Analysis, `N (Pbo / Low / High)` = N, Comparison,
+            `Difference vs placebo (95% CI)` = mapply(fmt_ci, estimate, lower, upper),
+            `p-value` = vapply(p, fmt_p, ""))
+```
+
+```{r fig-sensitivity}
+#| fig-cap: "Difference from placebo at Week 24 (95% CI) under each analysis. Negative values favour xanomeline."
+#| fig-height: 3.8
+ggplot(sens, aes(estimate, Analysis, colour = Comparison)) +
+  geom_vline(xintercept = 0, colour = "grey50", linetype = 2) +
+  geom_errorbarh(aes(xmin = lower, xmax = upper), height = 0.2,
+                 position = position_dodge(width = 0.5)) +
+  geom_point(size = 2.6, position = position_dodge(width = 0.5)) +
+  scale_y_discrete(limits = rev) +
+  scale_colour_manual(values = trt_colours[-1], breaks = trt_levels[-1]) +
+  labs(x = "Difference vs placebo (points)", y = NULL, colour = NULL) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom", panel.grid.minor = element_blank())
+```
+
+Under every analysis, the confidence intervals for both doses include zero.
+The primary conclusion therefore does not depend on LOCF: there is no
+statistically significant difference from placebo in ADAS-Cog(11) change at
+Week 24. The observed-case and completer analyses keep only subjects who stayed
+in the study. Those subjects are a selected group, especially in the active
+arms with their higher dropout, so these two analyses complement the primary
+analysis and do not replace it.
+
+# Reproducibility
+
+```{r repro}
+tibble(
+  Item  = c("Input dataset", "MD5", "Records (ADQSADAS)", "Rendered", "R"),
+  Value = c(adqsadas_path, unname(tools::md5sum(adqsadas_path)),
+            format(nrow(adqsadas), big.mark = ","),
+            format(Sys.time(), "%Y-%m-%d %H:%M %Z"), R.version.string)
+)
+```
+
+<details><summary>Session information</summary>
+
+```{r session}
+sessionInfo()
+```
+
+</details>

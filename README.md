@@ -59,6 +59,16 @@ python3 python/adam_conformance.py  # ADaM conformance checks
 
 `run_all.R` rebuilds every dataset, the `.xpt` files, define.xml, the tables and figures, then compares with the pilot and runs the tests. It downloads SDTM QS and the pilot reference datasets from a pinned commit of `phuse-scripts` and verifies their checksums, so it needs network access.
 
+## Report
+
+`reports/adascog_ancova.qmd` is a Quarto report on the primary efficacy analysis. It reads `data/adam/adqsadas.xpt`, rebuilds Table 4 and stops if any cell differs from `outputs/t4_adascog_wk24_ancova.csv`. It also includes the full model output, residual and slope checks, and exploratory sensitivity analyses: observed cases, Week 24 completers and an MMRM. It needs only the committed transport file, so `run_all.R` does not have to run first.
+
+```sh
+quarto render reports/adascog_ancova.qmd   # writes reports/adascog_ancova.html
+```
+
+This needs the [Quarto CLI](https://quarto.org/docs/get-started/) and the `{renv}` library (`renv::restore()`). CI renders the report on every push and keeps the HTML as the `report` artifact.
+
 ## Layout
 
 ```
@@ -74,6 +84,7 @@ programs/92_figures.R          Figures 1-2
 programs/93_tables_tte_eff.R   Tables 3-4 (time to event, ANCOVA)
 programs/94_define.R           define.xml and define.html
 programs/95_compare_pilot.R    comparison with the published pilot ADaM
+reports/adascog_ancova.qmd     Quarto report: primary efficacy ANCOVA
 R/                             shared functions (baseline rule, pinned downloads)
 metadata/                      specification, codelists, windows, explained differences
 tests/testthat/                tests
