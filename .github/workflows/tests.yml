@@ -1,8 +1,9 @@
 # Rebuild every ADaM dataset, the XPT files, define.xml, tables and figures;
 # compare with the published pilot ADaM; run the R test suite; then check the
 # exports from Python: cross-check, define.xml schema validation and ADaM
-# conformance checks. If a run fails on a missing system library, the fix is
-# almost always one more package in the apt-get line below.
+# conformance checks; render the Quarto efficacy report. If a run fails on a
+# missing system library, the fix is almost always one more package in the
+# apt-get line below.
 name: build-and-test
 
 on:
@@ -36,6 +37,11 @@ jobs:
       - name: Rebuild datasets, compare with the pilot and run tests
         run: Rscript run_all.R
 
+      - uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Render the efficacy report
+        run: quarto render reports/adascog_ancova.qmd
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -53,3 +59,11 @@ jobs:
         with:
           name: qc-reports
           path: outputs/qc/
+
+      - name: Keep the rendered report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report
+          path: reports/adascog_ancova.html
+          if-no-files-found: ignore
