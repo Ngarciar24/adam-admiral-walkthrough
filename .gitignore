@@ -10,6 +10,10 @@ renv/staging/
 .Rhistory
 .RData
 .Rproj.user/
+# rendered Quarto report (rebuilt by quarto render; kept as a CI artifact)
+reports/*.html
+reports/*_files/
+.quarto/
 # derived data (reproducible from run_all.R)
 data/adam/*.rds
 # downloaded, checksum-verified pilot files (R/pilot_files.R)
