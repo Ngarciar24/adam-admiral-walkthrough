@@ -14,6 +14,8 @@ renv/staging/
 reports/*.html
 reports/*_files/
 .quarto/
+# GitHub Pages site, assembled in CI by site/build_site.sh
+_site/
 # derived data (reproducible from run_all.R)
 data/adam/*.rds
 # downloaded, checksum-verified pilot files (R/pilot_files.R)

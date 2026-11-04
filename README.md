@@ -4,6 +4,8 @@
 
 ADaM datasets, define.xml and analysis outputs for the public CDISC pilot study (CDISCPILOT01), built in R with [{admiral}](https://pharmaverse.github.io/admiral/) and checked against the published pilot ADaM datasets.
 
+**Read it online:** [the walkthrough site](https://ngarciar24.github.io/adam-admiral-walkthrough/) · [efficacy report](https://ngarciar24.github.io/adam-admiral-walkthrough/report.html) · [define.xml, rendered](https://ngarciar24.github.io/adam-admiral-walkthrough/data/adam/define.html) · [reviewer's guide](https://ngarciar24.github.io/adam-admiral-walkthrough/docs/adrg.html)
+
 ## What it does
 
 - **Datasets.** Builds ADSL, ADLB (BDS), ADAE (OCCDS), ADTTE (time to first dermatologic event) and ADQSADAS (ADAS-Cog, with analysis windows and LOCF) from SDTM.
@@ -67,7 +69,7 @@ python3 python/adam_conformance.py  # ADaM conformance checks
 quarto render reports/adascog_ancova.qmd   # writes reports/adascog_ancova.html
 ```
 
-This needs the [Quarto CLI](https://quarto.org/docs/get-started/) and the `{renv}` library (`renv::restore()`). CI renders the report on every push and keeps the HTML as the `report` artifact.
+This needs the [Quarto CLI](https://quarto.org/docs/get-started/) and the `{renv}` library (`renv::restore()`). CI renders the report on every push and publishes it, with define.xml and the guides, at <https://ngarciar24.github.io/adam-admiral-walkthrough/> (`site/build_site.sh` assembles the site).
 
 ## Layout
 
@@ -85,6 +87,7 @@ programs/93_tables_tte_eff.R   Tables 3-4 (time to event, ANCOVA)
 programs/94_define.R           define.xml and define.html
 programs/95_compare_pilot.R    comparison with the published pilot ADaM
 reports/adascog_ancova.qmd     Quarto report: primary efficacy ANCOVA
+site/                          landing page and the script that assembles the Pages site
 R/                             shared functions (baseline rule, pinned downloads)
 metadata/                      specification, codelists, windows, explained differences
 tests/testthat/                tests
