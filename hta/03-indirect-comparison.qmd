@@ -1,0 +1,305 @@
+---
+title: "3. Indirect treatment comparison"
+subtitle: "The Bucher method and a small network meta-analysis"
+---
+
+<!--
+Program    : hta/03-indirect-comparison.qmd
+Study      : Published trial results: smoking cessation, 24 studies of four
+             interventions (netmeta::smokingcessation, Hasselblad 1998)
+Purpose    : Anchored indirect comparison by the Bucher method, by hand and
+             with {netmeta}, then a frequentist network meta-analysis with
+             network graph, league table and a check of direct against
+             indirect evidence
+Inputs     : netmeta::smokingcessation (installed package data, no download)
+             R/hta_methods.R (hand calculations)
+Outputs    : hta/_site/03-indirect-comparison.html
+Author     : Ignacio Garcia Ribelles
+Created    : 2026-11-24
+Change log : 2026-11-24  IGR  Initial version
+Notes      : Effect measure: odds ratio of quitting smoking. Values above 1
+             favour the first-named intervention. Studies with a zero cell
+             get 0.5 added to every cell, as netmeta::pairwise() does.
+             tests/testthat/test-hta-itc.R checks every hand calculation.
+-->
+
+```{r setup}
+library(dplyr)
+library(metafor)
+library(netmeta)
+
+source("R/hta_methods.R")
+
+fmt_ci <- function(est, lo, hi, d = 2) {
+  f <- function(x) formatC(x, format = "f", digits = d)
+  paste0(f(est), " (", f(lo), ", ", f(hi), ")")
+}
+fmt_p <- function(p) ifelse(p < 0.001, "<0.001", sprintf("%.3f", p))
+
+labels <- c(A = "No contact", B = "Self-help", C = "Individual counselling",
+            D = "Group counselling")
+
+data(smokingcessation, package = "netmeta")
+smk <- smokingcessation %>% mutate(study = row_number())
+```
+
+## The data
+
+The network holds 24 studies of four ways to help people stop smoking. The
+outcome is whether a person had quit at follow-up. Most studies compare an
+active intervention with no contact. Two studies have three arms.
+
+Source: Hasselblad V. Meta-analysis of multitreatment studies.
+*Medical Decision Making* 1998, 18(1), 37-43. They are also a common
+teaching example for network meta-analysis. They ship with the R
+package `{netmeta}`.
+
+```{r designs}
+smk %>%
+  mutate(Design = ifelse(treat3 == "", paste(treat1, treat2, sep = " vs "),
+                         paste(treat1, treat2, treat3, sep = " vs "))) %>%
+  count(Design, name = "Studies")
+```
+
+`r paste0(names(labels), " = ", labels, collapse = ", ")`.
+
+## 1. Anchored indirect comparison by the Bucher method
+
+The question: how does **self-help** compare with **individual counselling**?
+Only two studies compare them directly, and one of those has three arms. Many
+more studies compare each of them with **no contact**, the common
+comparator. The Bucher method asks what those studies say about self-help
+against counselling. Bucher and colleagues (1997) showed how to
+combine the two comparisons without breaking randomisation. On the log odds
+ratio scale:
+
+- log OR(self-help vs counselling) = log OR(self-help vs no contact) - log OR(counselling vs no contact)
+- Var = Var(self-help vs no contact) + Var(counselling vs no contact)
+
+Each ingredient is a pooled estimate from its own set of trials. To keep the
+two ingredients independent, only two-arm studies are used here. A three-arm
+study would put correlated contrasts on both sides of the subtraction.
+
+### Step 1. Each study's log odds ratio by hand
+
+```{r study-effects}
+# Log odds ratio of quitting, active (treat2) vs no contact (treat1).
+# log_or_hand() adds 0.5 to every cell of a study with a zero cell.
+study_lor <- function(d) {
+  cbind(study = d$study, log_or_hand(d$event2, d$n2, d$event1, d$n1))
+}
+
+two_arm <- smk %>% filter(treat3 == "")
+sh <- study_lor(two_arm %>% filter(treat1 == "A", treat2 == "B"))  # self-help vs no contact
+ic <- study_lor(two_arm %>% filter(treat1 == "A", treat2 == "C"))  # counselling vs no contact
+
+bind_rows(
+  sh %>% mutate(Comparison = "Self-help vs no contact"),
+  ic %>% mutate(Comparison = "Individual counselling vs no contact")
+) %>%
+  transmute(Comparison, Study = study,
+            `OR (95% CI)` = fmt_ci(exp(yi), exp(yi - 1.96 * sqrt(vi)), exp(yi + 1.96 * sqrt(vi))),
+            `Zero cell corrected` = ifelse(corrected, "yes", ""))
+```
+
+### Step 2. Pool each comparison, then subtract
+
+```{r bucher}
+fe_sh <- fe_hand(sh$yi, sh$vi)
+fe_ic <- fe_hand(ic$yi, ic$vi)
+bu    <- bucher_hand(fe_sh$est, fe_sh$se, fe_ic$est, fe_ic$se)
+
+data.frame(
+  Comparison = c("Self-help vs no contact (direct, pooled)",
+                 "Individual counselling vs no contact (direct, pooled)",
+                 "Self-help vs individual counselling (indirect, Bucher)"),
+  Studies = c(nrow(sh), nrow(ic), ""),
+  `log OR` = round(c(fe_sh$est, fe_ic$est, bu$est), 4),
+  SE = round(c(fe_sh$se, fe_ic$se, bu$se), 4),
+  `OR (95% CI)` = c(fmt_ci(exp(fe_sh$est), exp(fe_sh$lower), exp(fe_sh$upper)),
+                    fmt_ci(exp(fe_ic$est), exp(fe_ic$lower), exp(fe_ic$upper)),
+                    fmt_ci(exp(bu$est), exp(bu$lower), exp(bu$upper))),
+  check.names = FALSE
+)
+```
+
+### Step 3. Confirm with `netmeta`
+
+Fed only these two-arm studies, `netmeta` sees a star-shaped network with no
+contact in the middle. Its common-effect estimate for self-help against
+individual counselling is then exactly the Bucher estimate.
+
+```{r bucher-netmeta}
+pw_all <- pairwise(treat = list(treat1, treat2, treat3),
+                   event = list(event1, event2, event3),
+                   n = list(n1, n2, n3), data = smk, studlab = study, sm = "OR")
+pw_star <- subset(pw_all, studlab %in% c(sh$study, ic$study))
+nm_star <- netmeta(pw_star, common = TRUE, random = FALSE, reference.group = "A")
+
+data.frame(
+  Source = c("Hand (Bucher)", "netmeta, star network"),
+  `log OR` = c(bu$est, nm_star$TE.common["B", "C"]),
+  SE = c(bu$se, nm_star$seTE.common["B", "C"]),
+  check.names = FALSE
+)
+```
+
+The indirect odds ratio is `r fmt_ci(exp(bu$est), exp(bu$lower), exp(bu$upper))`.
+Self-help appears to help fewer people quit than individual counselling.
+
+The two pooled inputs above use the fixed-effect model. The
+counselling-versus-no-contact studies are very heterogeneous, so a
+random-effects version is the more honest sensitivity analysis:
+
+```{r bucher-re}
+re_sh <- rma(sh$yi, sh$vi, method = "REML")
+re_ic <- rma(ic$yi, ic$vi, method = "REML")
+bu_re <- bucher_hand(re_sh$beta[1], re_sh$se, re_ic$beta[1], re_ic$se)
+data.frame(
+  Model = c("Fixed effect", "Random effects (REML)"),
+  `I^2, counselling vs no contact` = sprintf("%.0f%%", c(rma(ic$yi, ic$vi, method = "FE")$I2, re_ic$I2)),
+  `Indirect OR (95% CI)` = c(fmt_ci(exp(bu$est), exp(bu$lower), exp(bu$upper)),
+                             fmt_ci(exp(bu_re$est), exp(bu_re$lower), exp(bu_re$upper))),
+  check.names = FALSE
+)
+```
+
+With random effects the interval
+`r fmt_ci(exp(bu_re$est), exp(bu_re$lower), exp(bu_re$upper))` is much wider.
+The fixed-effect result overstates the certainty.
+
+## 2. The assumptions in plain words
+
+**Similarity.** The self-help trials and the counselling trials must be alike
+in everything that changes how well an intervention works. That covers
+patients, settings, how "no contact" was delivered, the definition of
+quitting and the length of follow-up. If they differ, the subtraction
+compares more than the two interventions.
+
+**Effect modifiers.** These are the characteristics that change the relative
+effect, for example how motivated people are to quit. A difference in a
+purely prognostic factor, one that changes the quit rate but not the odds
+ratio, does not bias an anchored comparison. A difference in an effect
+modifier does, and randomisation inside each trial cannot remove it. The bias can only be judged from
+what the trials report.
+
+**Why the interval is wider than in either trial.** The indirect estimate is
+a difference of two independent estimates. Each carries its own sampling
+error, and variances of independent estimates add. Here the standard error
+is `r sprintf("%.3f", bu$se)`, against `r sprintf("%.3f", fe_sh$se)` and
+`r sprintf("%.3f", fe_ic$se)` for the two inputs. An indirect comparison is
+always less precise than a direct trial of the same size. When the two inputs are equally precise, the indirect estimate has the
+precision of a direct trial with a quarter of their combined patients.
+
+## 3. A network meta-analysis
+
+A network meta-analysis uses all studies at once, including the three-arm
+ones and any direct comparisons between active interventions. Every
+comparison then draws on direct and indirect evidence together. The
+frequentist method in `netmeta` is weighted least squares on the network.
+Three-arm studies are handled so that their correlated contrasts are not
+counted twice.
+
+```{r nma}
+nma <- netmeta(pw_all, common = TRUE, random = TRUE, reference.group = "A",
+               method.tau = "REML", small.values = "undesirable")
+```
+
+### Network graph
+
+```{r netgraph, fig.height = 5}
+# No contact (A) in the centre: every pair is connected, and this layout
+# draws the network without crossing lines. Order of nma$trts: A, B, C, D.
+netgraph(nma, labels = nma$trts, plastic = FALSE,
+         thickness = "number.of.studies", number.of.studies = TRUE,
+         multiarm = FALSE, points = TRUE, cex.points = 3, col.points = "#0072B2",
+         col = "grey40", cex = 1.4, offset = 0.05,
+         xpos = c(0, -1.4, 1.4, 0), ypos = c(-0.1, -0.9, -0.9, 1.5),
+         adj = rbind(c(-0.9, -0.6), c(0.5, 1), c(0.5, 1), c(0.5, 0)))
+title(sub = paste(paste(names(labels), labels, sep = " = "), collapse = ",  "))
+```
+
+Each line is a direct comparison. Its width and number show how many
+studies made it, counting each three-arm study once for each of its pairs.
+Every pair of interventions has at least one direct study. So every
+comparison combines direct and indirect evidence.
+
+### League table
+
+Each cell gives the random-effects network odds ratio of quitting for the
+row intervention against the column intervention, with its 95% confidence
+interval. Values above 1 favour the row.
+
+```{r league}
+# Cell [row, column]: network OR of the row intervention vs the column one.
+ord <- c("A", "B", "C", "D")
+lt <- outer(ord, ord, Vectorize(function(r, c) {
+  if (r == c) return(labels[[r]])
+  fmt_ci(exp(nma$TE.random[r, c]), exp(nma$lower.random[r, c]), exp(nma$upper.random[r, c]))
+}))
+dimnames(lt) <- list(labels[ord], labels[ord])
+as.data.frame(lt, check.names = FALSE)
+```
+
+`netmeta::netleague()` gives the same numbers in a compact form. Its lower
+triangle holds the network estimates (column against row) and its upper
+triangle the direct estimates (row against column).
+
+```{r nma-summary}
+data.frame(
+  Comparison = paste(labels[c("B", "C", "D")], "vs no contact"),
+  `OR (95% CI), random effects` = fmt_ci(exp(nma$TE.random[c("B", "C", "D"), "A"]),
+                                         exp(nma$lower.random[c("B", "C", "D"), "A"]),
+                                         exp(nma$upper.random[c("B", "C", "D"), "A"])),
+  check.names = FALSE
+)
+```
+
+Heterogeneity is large: τ² = `r sprintf("%.2f", nma$tau^2)` and I² =
+`r sprintf("%.0f", 100 * nma$I2)`%. Every active intervention looks better than
+no contact on average. The intervals are wide, and the one for self-help
+includes 1.
+
+### Direct against indirect evidence
+
+Consistency means that direct and indirect evidence on the same comparison
+agree. Node splitting separates them for each comparison and tests the
+difference. A closed loop is needed for a comparison to have both.
+
+```{r netsplit}
+ns <- netsplit(nma)
+data.frame(
+  Comparison = ns$comparison,
+  `Direct studies` = ns$k,
+  `Direct OR` = sprintf("%.2f", exp(ns$direct.random$TE)),
+  `Indirect OR` = sprintf("%.2f", exp(ns$indirect.random$TE)),
+  `Network OR` = sprintf("%.2f", exp(ns$random$TE)),
+  `p for difference` = fmt_p(ns$compare.random$p),
+  check.names = FALSE
+)
+```
+
+```{r decomp}
+dd <- decomp.design(nma)
+q_between <- dd$Q.decomp["Between designs", ]   # common-effect model
+q_random  <- dd$Q.inc.random                    # allowing for heterogeneity
+```
+
+No comparison shows a clear disagreement between direct and indirect
+evidence in the random-effects model. Self-help against individual
+counselling is a useful example. The two direct studies give OR
+`r sprintf("%.2f", exp(ns$direct.random$TE[ns$comparison == "B:C"]))`, the
+indirect evidence `r sprintf("%.2f", exp(ns$indirect.random$TE[ns$comparison == "B:C"]))`.
+They point in different directions, yet the test cannot tell them apart
+(p = `r fmt_p(ns$compare.random$p[ns$comparison == "B:C"])`) because the
+direct evidence is so thin. The design-by-treatment test of
+inconsistency for the whole network gives Q = `r sprintf("%.1f", q_between$Q)`
+on `r q_between$df` degrees of freedom (p = `r fmt_p(q_between$pval)`), under the
+common-effect model. Once between-study heterogeneity is allowed for, it
+falls to Q = `r sprintf("%.1f", q_random$Q)` (p = `r fmt_p(q_random$pval)`). These tests have little power. Failing to
+reject consistency does not prove it, and it says nothing about
+transitivity, which is a judgement about the trials and not a statistical
+test.
+
+Population-adjusted methods, for when this anchored approach is not possible
+or not enough, are described on the [next page](03b-population-adjusted.qmd).
