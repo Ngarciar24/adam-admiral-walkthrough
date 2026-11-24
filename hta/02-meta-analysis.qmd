@@ -1,0 +1,319 @@
+---
+title: "2. Meta-analysis"
+subtitle: "Pooling published trial results by hand and with {metafor}"
+---
+
+<!--
+Program    : hta/02-meta-analysis.qmd
+Study      : Published trial results: BCG vaccine against tuberculosis,
+             13 trials (metadat::dat.bcg, Colditz et al. 1994)
+Purpose    : Pairwise meta-analysis of risk ratios: per-trial effects,
+             fixed-effect and random-effects (REML, Hartung-Knapp) pooling,
+             heterogeneity, prediction interval, forest and funnel plots,
+             leave-one-out, and the random-effects model as a mixed model
+Inputs     : metadat::dat.bcg (installed package data, no download)
+             R/hta_methods.R (hand calculations)
+Outputs    : hta/_site/02-meta-analysis.html
+Author     : Ignacio Garcia Ribelles
+Created    : 2026-11-24
+Change log : 2026-11-24  IGR  Initial version
+Notes      : Effect measure: risk ratio of tuberculosis, vaccinated vs not,
+             analysed on the log scale. Values below 1 favour the vaccine.
+             tests/testthat/test-hta-meta.R checks every hand calculation.
+-->
+
+```{r setup}
+library(dplyr)
+library(metafor)   # also attaches {metadat}, which holds dat.bcg
+
+source("R/hta_methods.R")
+
+fmt_ci <- function(est, lo, hi, d = 2) {
+  f <- function(x) formatC(x, format = "f", digits = d)
+  paste0(f(est), " (", f(lo), ", ", f(hi), ")")
+}
+fmt_p <- function(p) ifelse(p < 0.001, "<0.001", sprintf("%.3f", p))
+
+bcg <- metadat::dat.bcg
+k   <- nrow(bcg)
+```
+
+## The data
+
+The dataset holds `r k` trials of the BCG vaccine against tuberculosis,
+published between 1948 and 1980.
+Each row is a 2x2 table: tuberculosis cases and non-cases among vaccinated
+and unvaccinated people.
+
+Source: Colditz GA, Brewer TF, Berkey CS, et al. Efficacy of BCG vaccine in
+the prevention of tuberculosis. Meta-analysis of the published literature.
+*JAMA* 1994, 271(9), 698-702. The data ship with the R package `{metadat}`.
+
+```{r data}
+bcg %>%
+  transmute(Trial = trial, Author = author, Year = year,
+            `Vaccinated: TB / N` = paste0(tpos, " / ", tpos + tneg),
+            `Control: TB / N` = paste0(cpos, " / ", cpos + cneg),
+            `Absolute latitude` = ablat, Allocation = alloc)
+```
+
+## 1. Each trial's effect and standard error
+
+The effect measure is the risk ratio (RR). Meta-analysis works on the log
+scale, where the estimate is close to normal and its variance has a simple
+form. For a trial with *a* cases among *n1* vaccinated and *c* cases among
+*n0* controls:
+
+- log RR = log(*a*/*n1*) - log(*c*/*n0*)
+- Var(log RR) = 1/*a* - 1/*n1* + 1/*c* - 1/*n0*
+
+The code computes both by hand, then with `metafor::escalc()`.
+
+```{r escalc}
+hand <- bcg %>%
+  mutate(n1 = tpos + tneg, n0 = cpos + cneg,
+         yi = log(tpos / n1) - log(cpos / n0),
+         vi = 1 / tpos - 1 / n1 + 1 / cpos - 1 / n0)
+
+es <- escalc(measure = "RR", ai = tpos, bi = tneg, ci = cpos, di = cneg, data = bcg)
+
+data.frame(Trial = bcg$trial,
+           `log RR, hand` = round(hand$yi, 4), `SE, hand` = round(sqrt(hand$vi), 4),
+           `RR (95% CI)` = fmt_ci(exp(hand$yi), exp(hand$yi - 1.96 * sqrt(hand$vi)),
+                                  exp(hand$yi + 1.96 * sqrt(hand$vi))),
+           check.names = FALSE)
+```
+
+Largest difference between hand and `escalc()`: log RR
+`r signif(max(abs(hand$yi - es$yi)), 2)`, variance
+`r signif(max(abs(hand$vi - es$vi)), 2)`. The test suite checks the same
+values with tolerance 1e-8.
+
+## 2. Fixed-effect pooled estimate
+
+The fixed-effect model assumes that all trials estimate one common true
+effect. Differences between trials are then sampling error only. The best
+estimate is a weighted mean with weights *w~i~* = 1/*v~i~*, the inverse of each
+trial's variance. Large trials get large weights.
+
+- pooled log RR = Σ *w~i~ y~i~* / Σ *w~i~*
+- SE = 1 / √(Σ *w~i~*)
+
+```{r fe}
+fe  <- fe_hand(es$yi, es$vi)
+fe_pkg <- rma(yi, vi, data = es, method = "FE")
+
+# Share of the total weight per trial, for the text.
+weights_tab <- bcg %>%
+  mutate(n = tpos + tneg + cpos + cneg,
+         w_fe = 100 * (1 / es$vi) / sum(1 / es$vi))
+w_top <- weights_tab %>% slice_max(w_fe, n = 1)
+
+data.frame(
+  Source = c("Hand", "metafor::rma(method = \"FE\")"),
+  `Pooled log RR` = c(fe$est, fe_pkg$beta[1]),
+  SE = c(fe$se, fe_pkg$se),
+  `Pooled RR (95% CI)` = c(fmt_ci(exp(fe$est), exp(fe$lower), exp(fe$upper)),
+                           fmt_ci(exp(fe_pkg$beta[1]), exp(fe_pkg$ci.lb), exp(fe_pkg$ci.ub))),
+  check.names = FALSE
+)
+```
+
+The fixed-effect estimate is RR `r fmt_ci(exp(fe$est), exp(fe$lower), exp(fe$upper))`.
+The weights are very unequal. The largest trial, `r w_top$author` `r w_top$year`
+with `r format(w_top$n, big.mark = ",")` participants, carries
+`r sprintf("%.0f", w_top$w_fe)`% of the weight on its own.
+
+## 3. Random-effects model
+
+```{r re}
+# Tight convergence so that the package and the hand REML agree to 1e-8.
+re_pkg <- rma(yi, vi, data = es, method = "REML", test = "knha",
+              control = list(threshold = 1e-12, maxiter = 1000))
+tau2   <- reml_tau2_hand(es$yi, es$vi)
+re     <- re_hand(es$yi, es$vi, tau2, knha = TRUE)
+pred   <- predict(re_pkg)
+
+data.frame(
+  Quantity = c("tau^2 (REML)", "Pooled log RR", "SE (Hartung-Knapp)",
+               "95% CI, lower", "95% CI, upper", "Prediction interval, lower",
+               "Prediction interval, upper"),
+  Hand = c(tau2, re$est, re$se, re$lower, re$upper, re$pi_lower, re$pi_upper),
+  metafor = c(re_pkg$tau2, re_pkg$beta[1], re_pkg$se, re_pkg$ci.lb, re_pkg$ci.ub,
+              pred$pi.lb, pred$pi.ub)
+)
+```
+
+The random-effects model assumes that each trial has its own true effect.
+These true effects vary around a mean, with between-trial variance τ².
+REML (restricted maximum likelihood) estimates τ². The hand version uses
+Fisher scoring, as `metafor` does. The Hartung-Knapp adjustment then rescales
+the standard error by the observed spread of the trials around the mean. It
+uses a *t* distribution with *k* - 1 = `r k - 1` degrees of freedom. That gives
+more honest coverage when there are few trials.
+
+**Fixed effect against random effects, in five sentences.**
+The fixed-effect model asks what the one common effect is, and it treats all
+differences between trials as chance.
+The random-effects model asks what the average effect is across a population
+of settings whose true effects differ.
+It adds τ² to every trial's variance, so the weights become more equal and
+small trials gain influence.
+Its confidence interval is wider because it carries the uncertainty about
+the spread of effects as well as the sampling error.
+When τ² is zero the two models give the same answer.
+
+Here the random-effects estimate is RR
+`r fmt_ci(exp(re$est), exp(re$lower), exp(re$upper))`. The fixed-effect
+estimate was `r fmt_ci(exp(fe$est), exp(fe$lower), exp(fe$upper))`. The two
+differ because of the weights. The largest trial found no benefit (RR
+`r sprintf("%.2f", exp(es$yi[w_top$trial]))`) and carries
+`r sprintf("%.0f", w_top$w_fe)`% of the fixed-effect weight. The random-effects
+weights are more equal, and most smaller trials found larger benefits.
+
+## 4. Heterogeneity
+
+```{r het}
+het <- heterogeneity_hand(es$yi, es$vi, tau2)
+
+data.frame(
+  Statistic = c("Q (df)", "p-value for Q", "tau^2", "tau", "I^2", "H^2",
+                "Prediction interval for the RR"),
+  Value = c(sprintf("%.1f (%d)", het$Q, het$df), fmt_p(het$Qp), sprintf("%.3f", het$tau2),
+            sprintf("%.3f", sqrt(het$tau2)), sprintf("%.1f%%", het$I2), sprintf("%.1f", het$H2),
+            sprintf("%.2f to %.2f", exp(re$pi_lower), exp(re$pi_upper))),
+  `Question it answers` = c(
+    "Do the trials differ by more than chance would allow?",
+    "How surprising is that spread if there were one common effect?",
+    "How large is the spread of true effects, on the log RR scale?",
+    "The same, as a standard deviation (easier to read).",
+    "What share of the total variation is real difference between trials?",
+    "How many times larger the total variation is than sampling error alone.",
+    "Where would the true effect of a new, similar trial lie?"
+  ),
+  check.names = FALSE
+)
+```
+
+- **Q** is a test. With few trials it has little power, and with many
+  trials it flags trivial differences. A large p-value does not show that the
+  trials agree.
+- **I²** is a share, not an amount. With large, precise trials even a small
+  τ² gives a high I². With small trials a large τ² can give a low I². `metafor` computes it from τ². The
+  classic formula (Q - df)/Q = `r sprintf("%.1f%%", het$I2_from_Q)` gives the
+  same value only with the DerSimonian-Laird τ².
+- **τ²** is the amount. It is on the scale of the effect, so it can be
+  judged clinically: τ = `r sprintf("%.2f", sqrt(tau2))` on the log scale means true risk
+  ratios that differ by a factor of about
+  `r sprintf("%.1f", exp(2 * 1.96 * sqrt(tau2)))` between the 2.5th and 97.5th
+  percentile.
+- **The prediction interval** turns τ² into a statement about practice. Here
+  it runs from `r sprintf("%.2f", exp(re$pi_lower))` to
+  `r sprintf("%.2f", exp(re$pi_upper))`. It includes 1, so in some new setting
+  the vaccine might not protect at all, even though the mean effect is clearly
+  protective. With the Hartung-Knapp adjustment, `metafor` uses a *t*
+  distribution with *k* - 1 degrees of freedom here. Some texts use *k* - 2.
+
+Latitude is a known candidate effect modifier in these trials. Colditz and
+colleagues found larger benefits further from the equator. A meta-regression
+on absolute latitude shows how much of τ² it explains.
+
+```{r metareg}
+mr <- rma(yi, vi, mods = ~ ablat, data = es, method = "REML", test = "knha")
+data.frame(
+  Model = c("No covariate", "Absolute latitude"),
+  `tau^2` = round(c(re_pkg$tau2, mr$tau2), 3),
+  `Change in log RR per 10 degrees` = c("", sprintf("%.3f (95%% CI %.3f, %.3f)",
+                                       10 * mr$beta[2], 10 * mr$ci.lb[2], 10 * mr$ci.ub[2])),
+  check.names = FALSE
+)
+```
+
+Latitude explains about `r round(100 * (1 - mr$tau2 / re_pkg$tau2))`% of the
+between-trial variance. This is the same idea as an effect modifier in
+chapter 3. A variable that changes the effect, and is distributed
+differently across trials, produces heterogeneity.
+
+## 5. Forest plot, funnel plot and leave-one-out
+
+```{r forest, fig.height = 6.5}
+forest(re_pkg, atransf = exp, addpred = TRUE, header = c("Trial", "RR [95% CI]"),
+       slab = paste(bcg$author, bcg$year), refline = 0,
+       xlab = "Risk ratio (log scale), below 1 favours vaccination",
+       mlab = "Random effects, REML, Hartung-Knapp")
+```
+
+The diamond is the pooled estimate and its confidence interval. The dotted
+line under it is the prediction interval. Square size shows each trial's
+weight in the random-effects model.
+
+```{r funnel, fig.height = 4.5}
+funnel(re_pkg, atransf = exp, xlab = "Risk ratio (log scale)")
+egger <- regtest(re_pkg)
+```
+
+The funnel plot shows each trial's effect against its standard error. Small
+trials scatter more widely. Without small-study effects such as publication
+bias, the points form a symmetric funnel. Egger's regression test gives
+p = `r sprintf("%.2f", egger$pval)`. With `r k` trials the test has little
+power, and asymmetry can also come from real heterogeneity. So the funnel
+plot is a check, not a proof either way.
+
+```{r loo}
+loo <- leave1out(re_pkg, transf = exp)
+data.frame(`Trial left out` = paste(bcg$author, bcg$year),
+           `Pooled RR (95% CI)` = fmt_ci(loo$estimate, loo$ci.lb, loo$ci.ub),
+           `tau^2` = round(loo$tau2, 3),
+           `I^2, %` = round(loo$I2, 1),
+           check.names = FALSE)
+```
+
+Leaving out one trial at a time moves the pooled RR only between
+`r sprintf("%.2f", min(loo$estimate))` and `r sprintf("%.2f", max(loo$estimate))`.
+No single trial drives the conclusion that the vaccine protects on average.
+
+## 6. A random-effects meta-analysis is a mixed model
+
+The random-effects model is a linear mixed model with one observation per
+trial:
+
+*y~i~* = μ + *u~i~* + *e~i~*, with *u~i~* ~ N(0, τ²) and *e~i~* ~ N(0, *v~i~*).
+
+μ is the fixed intercept, the pooled effect. *u~i~* is a random intercept per
+trial, with variance τ². *e~i~* is the residual, but unlike an ordinary mixed
+model its variance *v~i~* is known from each trial and not estimated. That is
+why `lme4::lmer()` cannot fit it directly. `lmer()` always estimates a
+residual variance, and its weights only rescale it.
+`metafor::rma.mv()` is a general mixed-model fitter that accepts known
+residual variances. Fitting the trial as a random intercept reproduces the
+REML random-effects model.
+
+```{r mixed}
+mv <- rma.mv(yi, vi, random = ~ 1 | trial, data = es, method = "REML",
+             control = list(optimizer = "optim", optmethod = "BFGS",
+                            optCtrl = list(reltol = 1e-14)))
+re_z <- rma(yi, vi, data = es, method = "REML",
+            control = list(threshold = 1e-12, maxiter = 1000))
+
+data.frame(
+  Model = c("rma(), random effects", "rma.mv(), random intercept per trial"),
+  `tau^2 / sigma^2` = c(re_z$tau2, mv$sigma2),
+  `mu (pooled log RR)` = c(re_z$beta[1], mv$beta[1]),
+  SE = c(re_z$se, mv$se),
+  `REML log-likelihood` = c(logLik(re_z), logLik(mv)),
+  check.names = FALSE
+)
+```
+
+The two fits agree to about seven decimal places. The small remaining
+difference comes from two different numerical optimisers, not from the
+model. The test suite therefore checks this pair with tolerance 1e-6. The
+hand calculations are checked with tolerance 1e-8.
+
+What carries over from mixed models: τ² is the random-intercept variance,
+REML is used for the same reason as in any mixed model, and the prediction
+interval is the spread of a new random intercept. What differs: there is one
+row per trial and no individual patient data, so the within-trial variance
+has to be supplied. With individual patient data, the same question becomes
+a one-stage model, for example `lme4::glmer()` with a random treatment
+effect per trial.
