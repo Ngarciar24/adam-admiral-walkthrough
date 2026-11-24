@@ -6,17 +6,24 @@ subtitle: "Pooling published trial results by hand and with {metafor}"
 <!--
 Program    : hta/02-meta-analysis.qmd
 Study      : Published trial results: BCG vaccine against tuberculosis,
-             13 trials (metadat::dat.bcg, Colditz et al. 1994)
+             13 trials (metadat::dat.bcg, Colditz et al. 1994), and
+             chemotherapy in head and neck cancer, 65 trials
+             (metadat::dat.pignon2000, Pignon et al. 2000)
 Purpose    : Pairwise meta-analysis of risk ratios: per-trial effects,
              fixed-effect and random-effects (REML, Hartung-Knapp) pooling,
              heterogeneity, prediction interval, forest and funnel plots,
-             leave-one-out, and the random-effects model as a mixed model
-Inputs     : metadat::dat.bcg (installed package data, no download)
+             leave-one-out, the random-effects model as a mixed model, and
+             pooling of hazard ratios the way IQWiG runs it (Paule-Mandel,
+             Knapp-Hartung, subgroup test)
+Inputs     : metadat::dat.bcg, metadat::dat.pignon2000 (installed package
+             data, no download)
              R/hta_methods.R (hand calculations)
 Outputs    : hta/_site/02-meta-analysis.html
 Author     : Ignacio Garcia Ribelles
 Created    : 2026-11-24
 Change log : 2026-11-24  IGR  Initial version
+             2026-11-25  IGR  Section 7: hazard ratios in oncology. IQWiG
+                              statements checked against General Methods 7.0
 Notes      : Effect measure: risk ratio of tuberculosis, vaccinated vs not,
              analysed on the log scale. Values below 1 favour the vaccine.
              tests/testthat/test-hta-meta.R checks every hand calculation.
@@ -24,6 +31,7 @@ Notes      : Effect measure: risk ratio of tuberculosis, vaccinated vs not,
 
 ```{r setup}
 library(dplyr)
+library(ggplot2)
 library(metafor)   # also attaches {metadat}, which holds dat.bcg
 
 source("R/hta_methods.R")
@@ -85,8 +93,8 @@ data.frame(Trial = bcg$trial,
 ```
 
 Largest difference between hand and `escalc()`: log RR
-`r signif(max(abs(hand$yi - es$yi)), 2)`, variance
-`r signif(max(abs(hand$vi - es$vi)), 2)`. The test suite checks the same
+`r sprintf("%.1e", max(abs(hand$yi - es$yi)))`, variance
+`r sprintf("%.1e", max(abs(hand$vi - es$vi)))`. The test suite checks the same
 values with tolerance 1e-8.
 
 ## 2. Fixed-effect pooled estimate
@@ -151,6 +159,10 @@ Fisher scoring, as `metafor` does. The Hartung-Knapp adjustment then rescales
 the standard error by the observed spread of the trials around the mean. It
 uses a *t* distribution with *k* - 1 = `r k - 1` degrees of freedom. That gives
 more honest coverage when there are few trials.
+
+IQWiG uses the same Knapp-Hartung method but estimates τ² by the
+Paule-Mandel method (General Methods 7.0, section 9.3.7). Section 7 below
+runs the analysis that way on an oncology example.
 
 **Fixed effect against random effects, in five sentences.**
 The fixed-effect model asks what the one common effect is, and it treats all
@@ -317,3 +329,160 @@ row per trial and no individual patient data, so the within-trial variance
 has to be supplied. With individual patient data, the same question becomes
 a one-stage model, for example `lme4::glmer()` with a random treatment
 effect per trial.
+
+## 7. Pooling hazard ratios: chemotherapy in head and neck cancer
+
+An oncology HTA team pools hazard ratios, not risk ratios. The method is the
+same once each trial's log hazard ratio and its variance are known. Only the
+first step differs.
+
+The data come from the MACH-NC meta-analysis of individual patient data:
+`r nrow(metadat::dat.pignon2000)` randomised trials of locoregional treatment
+with chemotherapy against locoregional treatment alone in head and neck
+squamous-cell carcinoma. The outcome is death. Source: Pignon JP, Bourhis J,
+Domenge C, Designe L. Chemotherapy added to locoregional treatment for head
+and neck squamous-cell carcinoma: three meta-analyses of updated individual
+data. *Lancet* 2000, 355(9208), 949-955.
+
+### Each trial's log hazard ratio
+
+With individual patient data, each trial gives the log-rank statistics for
+the chemotherapy arm: the observed minus expected number of deaths (O - E)
+and its variance V. Then log HR = (O - E) / V and Var(log HR) = 1 / V. This
+is the Peto method, standard in individual patient data meta-analyses of
+survival.
+
+From published papers one usually has only the hazard ratio and its 95%
+confidence interval. The standard error then follows from the width of the
+interval on the log scale: SE = (log upper - log lower) / (2 × 1.96). The
+code shows that the two routes give the same answer, by building each
+trial's interval and recovering the standard error from it.
+
+```{r pignon-effects}
+pig <- metadat::dat.pignon2000
+hr  <- loghr_from_ome(pig$OmE, pig$V)
+pig$yi <- hr$yi
+pig$vi <- hr$vi
+pig$timing <- factor(pig$grp, levels = 1:3,
+                     labels = c("Adjuvant", "Neoadjuvant", "Concomitant"))
+
+# Published-style summary: HR and 95% CI, then back to the standard error.
+pub <- data.frame(hr = exp(pig$yi),
+                  lower = exp(pig$yi - qnorm(0.975) * sqrt(pig$vi)),
+                  upper = exp(pig$yi + qnorm(0.975) * sqrt(pig$vi)))
+back <- loghr_from_ci(pub$hr, pub$lower, pub$upper)
+
+head(data.frame(Trial = pig$trial, Timing = pig$timing, `O - E` = pig$OmE, V = pig$V,
+                `HR (95% CI)` = fmt_ci(pub$hr, pub$lower, pub$upper),
+                `SE from O - E and V` = round(sqrt(pig$vi), 4),
+                `SE from the CI` = round(back$se, 4), check.names = FALSE), 8)
+```
+
+Largest difference between the two standard errors over all trials:
+`r sprintf("%.1e", max(abs(back$se - sqrt(pig$vi))))`.
+
+### Pooling the way IQWiG does
+
+IQWiG's General Methods (version 7.0, section 9.3.7) describe the steps.
+
+1. If heterogeneity cannot be excluded, use a random-effects model.
+2. With enough studies, use the Knapp-Hartung method and estimate τ² by
+   Paule-Mandel.
+3. Run DerSimonian-Laird as a sensitivity analysis. If the Knapp-Hartung
+   interval is narrower than the DerSimonian-Laird one, apply the ad hoc
+   variance correction of Knapp and Hartung.
+4. With fewer than 5 studies, τ² cannot be estimated reliably. A
+   fixed-effect model or a qualitative summary is then considered.
+
+The Paule-Mandel τ² is the value at which the generalised Q statistic equals
+its expected value, *k* - 1. The code finds it by hand with a root search
+and compares it with `metafor`.
+
+```{r pignon-pool}
+fe_pig  <- fe_hand(pig$yi, pig$vi)
+tau2_pm <- pm_tau2_hand(pig$yi, pig$vi)
+kh      <- rma(yi, vi, data = pig, method = "PM", test = "knha",
+               control = list(tol = 1e-14))
+dl      <- rma(yi, vi, data = pig, method = "DL")
+use_adhoc <- (kh$ci.ub - kh$ci.lb) < (dl$ci.ub - dl$ci.lb)
+final   <- if (use_adhoc) rma(yi, vi, data = pig, method = "PM", test = "adhoc") else kh
+re_pig  <- re_hand(pig$yi, pig$vi, tau2_pm, knha = TRUE)
+het_pig <- heterogeneity_hand(pig$yi, pig$vi, tau2_pm)
+
+data.frame(
+  Model = c("Fixed effect (inverse variance)", "DerSimonian-Laird",
+            "Paule-Mandel with Knapp-Hartung (IQWiG)"),
+  `tau^2` = c("", sprintf("%.4f", dl$tau2),
+              sprintf("%.4f (hand %.4f)", kh$tau2, tau2_pm)),
+  `Pooled HR (95% CI)` = c(fmt_ci(exp(fe_pig$est), exp(fe_pig$lower), exp(fe_pig$upper)),
+                           fmt_ci(exp(dl$beta[1]), exp(dl$ci.lb), exp(dl$ci.ub)),
+                           fmt_ci(exp(re_pig$est), exp(re_pig$lower), exp(re_pig$upper))),
+  `CI width (log scale)` = sprintf("%.3f", c(fe_pig$upper - fe_pig$lower,
+                                             dl$ci.ub - dl$ci.lb, kh$ci.ub - kh$ci.lb)),
+  check.names = FALSE
+)
+```
+
+The Knapp-Hartung interval is `r ifelse(use_adhoc, "narrower", "wider")`
+than the DerSimonian-Laird interval, so the ad hoc variance correction
+`r ifelse(use_adhoc, "is", "is not")` needed. Chemotherapy reduces the hazard
+of death to about `r sprintf("%.2f", exp(re_pig$est))` times that without
+chemotherapy, 95% CI `r sprintf("%.2f", exp(re_pig$lower))` to
+`r sprintf("%.2f", exp(re_pig$upper))`. Heterogeneity is moderate: I² =
+`r sprintf("%.0f", het_pig$I2)`%, and the prediction interval for a new trial
+runs from `r sprintf("%.2f", exp(re_pig$pi_lower))` to
+`r sprintf("%.2f", exp(re_pig$pi_upper))`.
+
+### Does the timing of chemotherapy matter?
+
+The trials gave chemotherapy at three times: after locoregional treatment
+(adjuvant), before it (neoadjuvant) or together with radiotherapy
+(concomitant). This is a subgroup analysis across trials. The test for
+subgroup differences compares the spread between the subgroup estimates
+with what chance would allow. Under the fixed-effect model it is the total
+Q minus the Q within each subgroup.
+
+```{r pignon-subgroups}
+qb   <- q_between_hand(pig$yi, pig$vi, pig$timing)
+qb_p <- rma(yi, vi, mods = ~ timing, data = pig, method = "FE")
+mr_p <- rma(yi, vi, mods = ~ timing, data = pig, method = "PM", test = "knha")
+
+by_timing <- bind_rows(lapply(levels(pig$timing), function(t) {
+  d <- pig[pig$timing == t, ]
+  f <- fe_hand(d$yi, d$vi)
+  data.frame(Timing = t, Trials = nrow(d),
+             `Pooled HR, fixed effect (95% CI)` = fmt_ci(exp(f$est), exp(f$lower), exp(f$upper)),
+             est = f$est, lo = f$lower, hi = f$upper, check.names = FALSE)
+}))
+by_timing %>% select(-est, -lo, -hi)
+```
+
+Test for subgroup differences, fixed effect: Q = `r sprintf("%.2f", qb$Q_between)`
+on `r qb$df` degrees of freedom, p = `r fmt_p(qb$p)` (hand), and
+`r sprintf("%.2f", qb_p$QM)` from `metafor`. With random effects and
+Knapp-Hartung, the test from a meta-regression on timing gives
+p = `r fmt_p(mr_p$QMp)`.
+
+```{r pignon-forest, fig.height = 3}
+fd <- bind_rows(by_timing %>% select(label = Timing, est, lo, hi),
+                data.frame(label = "All trials (Paule-Mandel, Knapp-Hartung)",
+                           est = re_pig$est, lo = re_pig$lower, hi = re_pig$upper)) %>%
+  mutate(label = factor(label, levels = rev(label)))
+ggplot(fd, aes(exp(est), label)) +
+  geom_vline(xintercept = 1, colour = "grey40") +
+  geom_errorbar(aes(xmin = exp(lo), xmax = exp(hi)), width = 0.2, orientation = "y") +
+  geom_point(shape = 18, size = 3.5) +
+  scale_x_log10() +
+  labs(x = "Hazard ratio of death, chemotherapy vs none (log scale)", y = NULL) +
+  theme_minimal(base_size = 11) +
+  theme(panel.grid.minor = element_blank())
+```
+
+Only concomitant chemotherapy shows a clear benefit. That was the main
+finding of the original publication. Two cautions apply, and an assessor
+would raise both. Timing was not randomised within trials, so the
+comparison between subgroups is observational and can be confounded by
+other differences between the trials. And the subgroup was one of several
+possible splits, so a single significant test needs to have been planned in
+advance to carry weight.
+
