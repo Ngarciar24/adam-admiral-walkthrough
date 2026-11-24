@@ -5,12 +5,16 @@
 #              restricted mean survival time, effect measures from a 2x2
 #              table, inverse-variance pooling, REML between-trial variance,
 #              Hartung-Knapp interval, heterogeneity statistics, prediction
-#              interval and the Bucher indirect comparison
+#              interval, Paule-Mandel tau^2, hazard ratios from O - E and V,
+#              Hedges' g and the Bucher indirect comparison
 # Inputs     : vectors passed by the caller
 # Outputs    : functions only. Each returns a named list or a data frame
 # Author     : Ignacio Garcia Ribelles
 # Created    : 2026-11-24
 # Change log : 2026-11-24  IGR  Initial version
+#              2026-11-25  IGR  Hedges' g, Paule-Mandel tau^2, log hazard
+#                               ratio from O - E and V or from a reported
+#                               interval, test for subgroup differences
 # Notes      : Base R only, written from the formulas, so that each result
 #              can be checked against an established package
 #              (tests/testthat/test-hta-*.R, tolerance 1e-8). The chapters in
@@ -203,8 +207,72 @@ heterogeneity_hand <- function(yi, vi, tau2) {
        I2_from_Q = max(0, 100 * (fe$Q - fe$df) / fe$Q))
 }
 
+# Paule-Mandel estimate of tau^2, the estimator IQWiG uses with the
+# Knapp-Hartung method (General Methods 7.0, section 9.3.7). tau^2 is the
+# value at which the generalised Q statistic, sum(w_i (y_i - mu)^2) with
+# w_i = 1 / (v_i + tau^2), equals its expectation k - 1.
+pm_tau2_hand <- function(yi, vi) {
+  k <- length(yi)
+  gen_q <- function(tau2) {
+    w  <- 1 / (vi + tau2)
+    mu <- sum(w * yi) / sum(w)
+    sum(w * (yi - mu)^2) - (k - 1)
+  }
+  if (gen_q(0) <= 0) return(0)
+  upper <- 1
+  while (gen_q(upper) > 0) upper <- upper * 2
+  stats::uniroot(gen_q, c(0, upper), tol = 1e-14)$root
+}
+
+# Test for subgroup differences under the fixed-effect model: the total Q
+# minus the sum of the Q statistics within each subgroup, on
+# (number of subgroups - 1) degrees of freedom.
+q_between_hand <- function(yi, vi, group) {
+  q_within <- sum(vapply(split(seq_along(yi), group),
+                         function(i) fe_hand(yi[i], vi[i])$Q, numeric(1)))
+  qb <- fe_hand(yi, vi)$Q - q_within
+  df <- length(unique(group)) - 1
+  list(Q_between = qb, df = df, p = pchisq(qb, df, lower.tail = FALSE))
+}
+
+# Log hazard ratio from individual patient data summaries (Peto method):
+# log HR = (O - E) / V and Var = 1 / V, where O - E is the observed minus
+# expected number of events in the experimental arm under the log-rank
+# test and V its variance.
+loghr_from_ome <- function(o_minus_e, v) {
+  data.frame(yi = o_minus_e / v, vi = 1 / v)
+}
+
+# Log hazard ratio and its standard error from a published hazard ratio
+# and its confidence interval (Parmar et al. 1998, Tierney et al. 2007):
+# SE = (log(upper) - log(lower)) / (2 z), z = 1.96 for a 95% interval.
+loghr_from_ci <- function(hr, lower, upper, level = 0.95) {
+  z <- qnorm(1 - (1 - level) / 2)
+  data.frame(yi = log(hr), se = (log(upper) - log(lower)) / (2 * z))
+}
+
 # =============================================================================
-# 4. Indirect comparison (Bucher et al. 1997)
+# 4. Continuous endpoints
+# =============================================================================
+# Hedges' g: the mean difference divided by the pooled standard deviation,
+# times the exact small-sample correction J = Gamma(m/2) /
+# (sqrt(m/2) Gamma((m-1)/2)), m = n1 + n2 - 2. Large-sample variance
+# 1/n1 + 1/n2 + g^2 / (2 (n1 + n2)), as metafor::escalc(measure = "SMD").
+hedges_g_hand <- function(x1, x2, level = 0.95) {
+  n1 <- length(x1)
+  n2 <- length(x2)
+  m  <- n1 + n2 - 2
+  sp <- sqrt(((n1 - 1) * stats::var(x1) + (n2 - 1) * stats::var(x2)) / m)
+  j  <- exp(lgamma(m / 2) - log(sqrt(m / 2)) - lgamma((m - 1) / 2))
+  g  <- j * (mean(x1) - mean(x2)) / sp
+  v  <- 1 / n1 + 1 / n2 + g^2 / (2 * (n1 + n2))
+  z  <- qnorm(1 - (1 - level) / 2)
+  list(g = g, vi = v, lower = g - z * sqrt(v), upper = g + z * sqrt(v),
+       mean_diff = mean(x1) - mean(x2), sd_pooled = sp)
+}
+
+# =============================================================================
+# 5. Indirect comparison (Bucher et al. 1997)
 # =============================================================================
 # d_xb: effect of X against the common comparator B, on the log scale.
 # The indirect effect of A against C is d_ab - d_cb. The two estimates come
