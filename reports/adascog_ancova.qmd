@@ -1,7 +1,7 @@
 ---
 title: "ADAS-Cog(11) Week 24 ANCOVA"
 subtitle: "CDISCPILOT01: primary efficacy analysis from the ADaM datasets"
-author: "Ignacio G. Ribelles"
+author: "Ignacio Garcia Ribelles"
 date: today
 format:
   html:

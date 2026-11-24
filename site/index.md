@@ -1,7 +1,7 @@
 ---
 title: "ADaM walkthrough: the CDISC pilot study in R"
 subtitle: "ADSL, ADLB, ADAE, ADTTE and ADQSADAS with {admiral}, define.xml, and the primary efficacy analysis"
-author: "Ignacio García Ribelles"
+author: "Ignacio Garcia Ribelles"
 ---
 
 ADaM datasets, define.xml and analysis outputs for the public CDISC pilot study (CDISCPILOT01), built in R with [{admiral}](https://pharmaverse.github.io/admiral/) and checked variable by variable against the published pilot ADaM datasets. Source code, tests and CI: [github.com/Ngarciar24/adam-admiral-walkthrough](https://github.com/Ngarciar24/adam-admiral-walkthrough).
