@@ -4,7 +4,7 @@
 
 ADaM datasets, define.xml and analysis outputs for the public CDISC pilot study (CDISCPILOT01), built in R with [{admiral}](https://pharmaverse.github.io/admiral/) and checked against the published pilot ADaM datasets.
 
-**Read it online:** [the walkthrough site](https://ngarciar24.github.io/adam-admiral-walkthrough/) · [efficacy report](https://ngarciar24.github.io/adam-admiral-walkthrough/report.html) · [define.xml, rendered](https://ngarciar24.github.io/adam-admiral-walkthrough/data/adam/define.html) · [reviewer's guide](https://ngarciar24.github.io/adam-admiral-walkthrough/docs/adrg.html)
+**Read it online:** [the walkthrough site](https://ngarciar24.github.io/adam-admiral-walkthrough/) · [From ADaM to an HTA dossier](https://ngarciar24.github.io/adam-admiral-walkthrough/hta/) · [efficacy report](https://ngarciar24.github.io/adam-admiral-walkthrough/report.html) · [define.xml, rendered](https://ngarciar24.github.io/adam-admiral-walkthrough/data/adam/define.html) · [reviewer's guide](https://ngarciar24.github.io/adam-admiral-walkthrough/docs/adrg.html)
 
 ## What it does
 
@@ -12,8 +12,9 @@ ADaM datasets, define.xml and analysis outputs for the public CDISC pilot study 
 - **Transport files and define.xml.** Exports all five to SAS Transport v5 from one specification (`metadata/`). The same specification generates a Define-XML 2.1 `define.xml`, validated against the CDISC schema and against the transport files.
 - **Comparison with the pilot.** Compares every dataset with the published CDISC pilot ADaM datasets, variable by variable. Each difference must be explained in `metadata/pilot_differences.csv` or the run stops.
 - **Outputs.** Produces a demographics table, an ALT change-from-baseline table and figure, a time-to-event table with a Kaplan–Meier plot, and the primary efficacy ANCOVA.
+- **From ADaM to an HTA dossier.** A self-study extension in `hta/`, in three chapters. Chapter 1 analyses the ADaM data the way a health technology assessment asks for it: Kaplan–Meier, stratified Cox, proportional-hazards checks, restricted mean survival time, subgroup analyses with interaction tests, and risk ratio, odds ratio and risk difference. Chapter 2 is a meta-analysis of 13 published trials. Chapter 3 covers the Bucher indirect comparison, a network meta-analysis and population-adjusted methods. Each hand calculation is tested against an established R package.
 - **Checks.**
-  - 225 `testthat` expectations on the derivations, including unit tests of the baseline rule on hand-built data.
+  - 329 `testthat` expectations: 225 on the derivations, including unit tests of the baseline rule on hand-built data, and 104 on the HTA part, including checks that every hand calculation agrees with `{survival}`, `{survRM2}`, `{metafor}` or `{netmeta}` to within 1e-8.
   - 71 ADaM conformance checks.
   - An independent Python re-derivation of the treatment-emergent flag and the time-to-event data.
 - **Reproducibility.** GitHub Actions rebuilds everything on every push, in a pinned `{renv}` environment.
@@ -71,6 +72,22 @@ quarto render reports/adascog_ancova.qmd   # writes reports/adascog_ancova.html
 
 This needs the [Quarto CLI](https://quarto.org/docs/get-started/) and the `{renv}` library (`renv::restore()`). CI renders the report on every push and publishes it, with define.xml and the guides, at <https://ngarciar24.github.io/adam-admiral-walkthrough/> (`site/build_site.sh` assembles the site).
 
+## From ADaM to an HTA dossier
+
+`hta/` is a small Quarto website. It reads the committed transport files in `data/adam/` and data shipped with installed R packages (`{metadat}`, `{netmeta}`), so it downloads nothing and does not need `run_all.R` first.
+
+```sh
+quarto render hta   # writes hta/_site/
+```
+
+| Chapter | Data | Methods |
+|---|---|---|
+| 1. Time-to-event and safety analyses | ADSL, ADAE, ADTTE, ADQSADAS of CDISCPILOT01 | Kaplan–Meier, log-rank, Cox (unstratified and stratified), Schoenfeld residuals, RMST, subgroups with interaction tests, RR/OR/RD |
+| 2. Meta-analysis | 13 BCG vaccine trials (Colditz et al. 1994, `metadat::dat.bcg`) | Inverse-variance and REML random effects with Hartung–Knapp, Q, I², τ², prediction interval, forest and funnel plots, leave-one-out, `rma.mv` as a mixed model |
+| 3. Indirect treatment comparison | 24 smoking-cessation studies (Hasselblad 1998, `netmeta::smokingcessation`) | Bucher method, network meta-analysis, league table, node splitting, and a text page on MAIC and STC |
+
+The hand calculations live in `R/hta_methods.R`. The chapters and `tests/testthat/test-hta-*.R` both use them. This part is self-study on public data and is not part of any regulatory or HTA submission.
+
 ## Layout
 
 ```
@@ -87,8 +104,9 @@ programs/93_tables_tte_eff.R   Tables 3-4 (time to event, ANCOVA)
 programs/94_define.R           define.xml and define.html
 programs/95_compare_pilot.R    comparison with the published pilot ADaM
 reports/adascog_ancova.qmd     Quarto report: primary efficacy ANCOVA
+hta/                           Quarto website: From ADaM to an HTA dossier
 site/                          landing page and the script that assembles the Pages site
-R/                             shared functions (baseline rule, pinned downloads)
+R/                             shared functions (baseline rule, pinned downloads, HTA hand calculations)
 metadata/                      specification, codelists, windows, explained differences
 tests/testthat/                tests
 python/                        independent checks
@@ -118,4 +136,8 @@ Portfolio project on public test data, not a regulatory submission. Real study w
 
 ## Licence
 
-MIT. Source data belong to `{pharmaversesdtm}` and the CDISC pilot project (via `phuse-scripts`); they are downloaded at run time, not redistributed.
+MIT. Source data belong to `{pharmaversesdtm}` and the CDISC pilot project (via `phuse-scripts`); they are downloaded at run time, not redistributed. The published trial results used in `hta/` come with the `{metadat}` and `{netmeta}` packages.
+
+## How it was made
+
+The HTA part (`hta/`, `R/hta_methods.R` and `tests/testthat/test-hta-*.R`) was written with the help of Claude Code, an AI coding assistant. I set the scope and reviewed the code and text. The evidence that the numbers are right is the test suite: every hand calculation is checked against an established R package.

@@ -1,0 +1,58 @@
+# -----------------------------------------------------------------------------
+# File       : hta/_quarto.yml
+# Purpose    : Quarto website for the part "From ADaM to an HTA dossier":
+#              three chapters and a glossary
+# Usage      : quarto render hta   (from the project root; writes hta/_site/)
+# Author     : Ignacio Garcia Ribelles
+# Created    : 2026-11-24
+# Change log : 2026-11-24  IGR  Initial version
+# Notes      : Code runs from the project root (knitr root.dir), so paths are
+#              written as in programs/. hta/.Rprofile activates the project
+#              renv library. site/build_site.sh copies hta/_site/ to _site/hta/.
+# -----------------------------------------------------------------------------
+
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "From ADaM to an HTA dossier"
+  site-url: https://ngarciar24.github.io/adam-admiral-walkthrough/hta/
+  sidebar:
+    style: docked
+    contents:
+      - index.qmd
+      - 01-tte-safety.qmd
+      - 02-meta-analysis.qmd
+      - section: "3. Indirect treatment comparison"
+        contents:
+          - 03-indirect-comparison.qmd
+          - 03b-population-adjusted.qmd
+      - glossary.qmd
+  page-footer:
+    left: "Self-study on public data. Not part of any regulatory or HTA submission."
+    right: "[Back to the ADaM walkthrough](../index.html)"
+
+author: "Ignacio Garcia Ribelles"
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 2
+    code-fold: true
+    code-summary: "Code"
+    df-print: kable
+
+execute:
+  echo: true
+  warning: false
+  message: false
+
+knitr:
+  opts_knit:
+    root.dir: ".."
+  opts_chunk:
+    fig.width: 7.5
+    fig.height: 4.5
+    dpi: 150

@@ -13,6 +13,22 @@
     ]
   },
   "Packages": {
+    "CompQuadForm": {
+      "Package": "CompQuadForm",
+      "Version": "1.4.4",
+      "Source": "Repository",
+      "Date": "2025-07-13",
+      "Title": "Distribution Function of Quadratic Forms in Normal Variables",
+      "Authors@R": "c(person(\"Pierre\", \"Lafaye De Micheaux\", role = c(\"aut\", \"cre\"), email = \"lafaye@unsw.edu.au\"), person(\"Pierre\", \"Duchesne\", role = c(\"aut\"), email = \"duchesne@dms.umontreal.ca\"), person(c(\"Robert\", \"B.\"), \"Davies\", role = c(\"aut\")), person(c(\"R.\", \"W.\"), \"Farebrother\", role = c(\"aut\")), person(\"J.\", \"Sheil\", role = c(\"aut\")), person(\"I.\", \"O Muircheartaigh\", role = c(\"aut\")))",
+      "Author": "Pierre Lafaye De Micheaux [aut, cre], Pierre Duchesne [aut], Robert B. Davies [aut], R. W. Farebrother [aut], J. Sheil [aut], I. O Muircheartaigh [aut]",
+      "Maintainer": "Pierre Lafaye De Micheaux <lafaye@unsw.edu.au>",
+      "Description": "Computes the distribution function of quadratic forms in normal variables using Imhof's method, Davies's algorithm, Farebrother's algorithm or Liu et al.'s algorithm.",
+      "License": "GPL (>= 2)",
+      "LazyLoad": "yes",
+      "NeedsCompilation": "yes",
+      "Repository": "PPM",
+      "Encoding": "UTF-8"
+    },
     "Deriv": {
       "Package": "Deriv",
       "Version": "4.3.5",
@@ -2169,6 +2185,59 @@
       "Maintainer": "Thomas Lin Pedersen <thomas.pedersen@posit.co>",
       "Repository": "PPM"
     },
+    "ggrepel": {
+      "Package": "ggrepel",
+      "Version": "0.9.8",
+      "Source": "Repository",
+      "Authors@R": "c( person(\"Kamil\", \"Slowikowski\", email = \"kslowikowski@gmail.com\", role = c(\"aut\", \"cre\"), comment = c(ORCID = \"0000-0002-2843-6370\")), person(\"Teun\", \"van den Brand\", role = \"ctb\", comment = c(ORCID = \"0000-0002-9335-7468\")), person(\"Alicia\", \"Schep\", role = \"ctb\", comment = c(ORCID = \"0000-0002-3915-0618\")), person(\"Sean\", \"Hughes\", role = \"ctb\", comment = c(ORCID = \"0000-0002-9409-9405\")), person(\"Trung Kien\", \"Dang\", role = \"ctb\", comment = c(ORCID = \"0000-0001-7562-6495\")), person(\"Saulius\", \"Lukauskas\", role = \"ctb\"), person(\"Jean-Olivier\", \"Irisson\", role = \"ctb\", comment = c(ORCID = \"0000-0003-4920-3880\")), person(\"Zhian N\", \"Kamvar\", role = \"ctb\", comment = c(ORCID = \"0000-0003-1458-7108\")), person(\"Thompson\", \"Ryan\", role = \"ctb\", comment = c(ORCID = \"0000-0002-0450-8181\")), person(\"Dervieux\", \"Christophe\", role = \"ctb\", comment = c(ORCID = \"0000-0003-4474-2498\")), person(\"Yutani\", \"Hiroaki\", role = \"ctb\"), person(\"Pierre\", \"Gramme\", role = \"ctb\"), person(\"Amir Masoud\", \"Abdol\", role = \"ctb\"), person(\"Malcolm\", \"Barrett\", role = \"ctb\", comment = c(ORCID = \"0000-0003-0299-5825\")), person(\"Robrecht\", \"Cannoodt\", role = \"ctb\", comment = c(ORCID = \"0000-0003-3641-729X\")), person(\"Micha<U+0142>\", \"Krassowski\", role = \"ctb\", comment = c(ORCID = \"0000-0002-9638-7785\")), person(\"Michael\", \"Chirico\", role = \"ctb\", comment = c(ORCID = \"0000-0003-0787-087X\")), person(\"Pedro\", \"Aphalo\", role = \"ctb\", comment = c(ORCID = \"0000-0003-3385-972X\")), person(\"Francis\", \"Barton\", role = \"ctb\") )",
+      "Title": "Automatically Position Non-Overlapping Text Labels with 'ggplot2'",
+      "Description": "Provides text and label geoms for 'ggplot2' that help to avoid overlapping text labels. Labels repel away from each other and away from the data points.",
+      "Depends": [
+        "R (>= 4.1.0)",
+        "ggplot2 (>= 3.5.2)"
+      ],
+      "Imports": [
+        "grid",
+        "Rcpp",
+        "rlang (>= 1.1.6)",
+        "S7",
+        "scales (>= 1.4.0)",
+        "withr (>= 3.0.2)"
+      ],
+      "Suggests": [
+        "knitr",
+        "rmarkdown",
+        "testthat",
+        "svglite",
+        "vdiffr",
+        "gridExtra",
+        "ggpp",
+        "patchwork",
+        "devtools",
+        "prettydoc",
+        "ggbeeswarm",
+        "dplyr",
+        "magrittr",
+        "readr",
+        "stringr",
+        "marquee",
+        "rsvg",
+        "sf"
+      ],
+      "VignetteBuilder": "knitr",
+      "License": "GPL-3 | file LICENSE",
+      "URL": "https://ggrepel.slowkow.com/, https://github.com/slowkow/ggrepel",
+      "BugReports": "https://github.com/slowkow/ggrepel/issues",
+      "RoxygenNote": "7.3.3",
+      "LinkingTo": [
+        "Rcpp"
+      ],
+      "Encoding": "UTF-8",
+      "NeedsCompilation": "yes",
+      "Author": "Kamil Slowikowski [aut, cre] (ORCID: <https://orcid.org/0000-0002-2843-6370>), Teun van den Brand [ctb] (ORCID: <https://orcid.org/0000-0002-9335-7468>), Alicia Schep [ctb] (ORCID: <https://orcid.org/0000-0002-3915-0618>), Sean Hughes [ctb] (ORCID: <https://orcid.org/0000-0002-9409-9405>), Trung Kien Dang [ctb] (ORCID: <https://orcid.org/0000-0001-7562-6495>), Saulius Lukauskas [ctb], Jean-Olivier Irisson [ctb] (ORCID: <https://orcid.org/0000-0003-4920-3880>), Zhian N Kamvar [ctb] (ORCID: <https://orcid.org/0000-0003-1458-7108>), Thompson Ryan [ctb] (ORCID: <https://orcid.org/0000-0002-0450-8181>), Dervieux Christophe [ctb] (ORCID: <https://orcid.org/0000-0003-4474-2498>), Yutani Hiroaki [ctb], Pierre Gramme [ctb], Amir Masoud Abdol [ctb], Malcolm Barrett [ctb] (ORCID: <https://orcid.org/0000-0003-0299-5825>), Robrecht Cannoodt [ctb] (ORCID: <https://orcid.org/0000-0003-3641-729X>), Micha<U+0142> Krassowski [ctb] (ORCID: <https://orcid.org/0000-0002-9638-7785>), Michael Chirico [ctb] (ORCID: <https://orcid.org/0000-0003-0787-087X>), Pedro Aphalo [ctb] (ORCID: <https://orcid.org/0000-0003-3385-972X>), Francis Barton [ctb]",
+      "Maintainer": "Kamil Slowikowski <kslowikowski@gmail.com>",
+      "Repository": "PPM"
+    },
     "glue": {
       "Package": "glue",
       "Version": "1.8.1",
@@ -2435,6 +2504,76 @@
       "NeedsCompilation": "yes",
       "Author": "Joe Cheng [aut], Carson Sievert [aut, cre] (ORCID: <https://orcid.org/0000-0002-4958-2844>), Barret Schloerke [aut] (ORCID: <https://orcid.org/0000-0001-9986-114X>), Winston Chang [aut] (ORCID: <https://orcid.org/0000-0002-1576-2126>), Yihui Xie [aut], Jeff Allen [aut], Posit Software, PBC [cph, fnd]",
       "Maintainer": "Carson Sievert <carson@posit.co>",
+      "Repository": "PPM"
+    },
+    "igraph": {
+      "Package": "igraph",
+      "Version": "2.3.4",
+      "Source": "Repository",
+      "Title": "Network Analysis and Visualization",
+      "Authors@R": "c( person(\"G<U+00E1>bor\", \"Cs<U+00E1>rdi\", , \"csardi.gabor@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0001-7098-9676\")), person(\"Tam<U+00E1>s\", \"Nepusz\", , \"ntamas@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0002-1451-338X\")), person(\"Vincent\", \"Traag\", role = \"aut\", comment = c(ORCID = \"0000-0003-3170-3879\")), person(\"Szabolcs\", \"Horv<U+00E1>t\", , \"szhorvat@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0002-3100-523X\")), person(\"Fabio\", \"Zanini\", , \"fabio.zanini@unsw.edu.au\", role = \"aut\", comment = c(ORCID = \"0000-0001-7097-8539\")), person(\"Daniel\", \"Noom\", role = \"aut\"), person(\"Kirill\", \"M<U+00FC>ller\", , \"kirill@cynkra.com\", role = c(\"aut\", \"cre\"), comment = c(ORCID = \"0000-0002-1416-3412\")), person(\"Michael\", \"Antonov\", role = \"ctb\"), person(\"Chan Zuckerberg Initiative\", role = \"fnd\", comment = c(ROR = \"02qenvm24\")), person(\"David\", \"Schoch\", , \"david.schoch@cynkra.com\", role = \"aut\", comment = c(ORCID = \"0000-0003-2952-4812\")), person(\"Ma<U+00EB>lle\", \"Salmon\", , \"maelle@cynkra.com\", role = \"aut\", comment = c(ORCID = \"0000-0002-2815-0399\")), person(\"R Consortium\", role = \"fnd\", comment = c(ROR = \"01z833950\")) )",
+      "Description": "Routines for simple graphs and network analysis. It can handle large graphs very well and provides functions for generating random and regular graphs, graph visualization, centrality methods and much more.",
+      "License": "GPL (>= 2)",
+      "URL": "https://r.igraph.org/, https://igraph.org/, https://igraph.discourse.group/",
+      "BugReports": "https://github.com/igraph/rigraph/issues",
+      "Depends": [
+        "methods",
+        "R (>= 3.5.0)"
+      ],
+      "Imports": [
+        "cli",
+        "graphics",
+        "grDevices",
+        "lifecycle",
+        "magrittr",
+        "Matrix",
+        "pkgconfig (>= 2.0.0)",
+        "rlang (>= 1.1.0)",
+        "stats",
+        "utils",
+        "vctrs"
+      ],
+      "Suggests": [
+        "ape (>= 5.7-0.1)",
+        "callr",
+        "decor",
+        "digest",
+        "igraphdata",
+        "knitr",
+        "rgl (>= 1.3.14)",
+        "rmarkdown",
+        "scales",
+        "stats4",
+        "tcltk",
+        "testthat",
+        "vdiffr",
+        "withr"
+      ],
+      "Enhances": [
+        "graph"
+      ],
+      "LinkingTo": [
+        "cpp11 (>= 0.5.0)"
+      ],
+      "VignetteBuilder": "knitr",
+      "Config/build/compilation-database": "false",
+      "Config/build/never-clean": "true",
+      "Config/comment/compilation-database": "Generate manually with pkgload:::generate_db() for faster pkgload::load_all()",
+      "Config/gha/extra-packages": "graph=?ignore-before-r=4.4.0",
+      "Config/comment/gha/extra-packages": "graph is an optional Enhances dependency published only on Bioconductor. The Bioconductor releases matching R 4.2 and R 4.3 (graph 3.16 / 3.18) are archived and return HTTP 404, which aborts pak dependency resolution on those jobs. The ?ignore-before-r pak parameter makes pak ignore graph on R older than 4.4.0, where a published release still exists.",
+      "Config/Needs/build": "devtools, irlba, pkgconfig",
+      "Config/Needs/coverage": "covr",
+      "Config/Needs/roxygen2": "r-lib/roxygen2, igraph/igraph.r2cdocs, moodymudskipper/devtag",
+      "Config/Needs/website": "here, readr, tibble, xmlparsedata, xml2",
+      "Config/testthat/edition": "3",
+      "Config/testthat/parallel": "true",
+      "Config/testthat/start-first": "aaa-auto, vs-es, scan, vs-operators, weakref, watts.strogatz.game",
+      "Encoding": "UTF-8",
+      "SystemRequirements": "libxml2 (optional), glpk (>= 4.57, optional)",
+      "Config/roxygen2/version": "8.1.0.9000",
+      "NeedsCompilation": "yes",
+      "Author": "G<U+00E1>bor Cs<U+00E1>rdi [aut] (ORCID: <https://orcid.org/0000-0001-7098-9676>), Tam<U+00E1>s Nepusz [aut] (ORCID: <https://orcid.org/0000-0002-1451-338X>), Vincent Traag [aut] (ORCID: <https://orcid.org/0000-0003-3170-3879>), Szabolcs Horv<U+00E1>t [aut] (ORCID: <https://orcid.org/0000-0002-3100-523X>), Fabio Zanini [aut] (ORCID: <https://orcid.org/0000-0001-7097-8539>), Daniel Noom [aut], Kirill M<U+00FC>ller [aut, cre] (ORCID: <https://orcid.org/0000-0002-1416-3412>), Michael Antonov [ctb], Chan Zuckerberg Initiative [fnd] (ROR: <https://ror.org/02qenvm24>), David Schoch [aut] (ORCID: <https://orcid.org/0000-0003-2952-4812>), Ma<U+00EB>lle Salmon [aut] (ORCID: <https://orcid.org/0000-0002-2815-0399>), R Consortium [fnd] (ROR: <https://ror.org/01z833950>)",
+      "Maintainer": "Kirill M<U+00FC>ller <kirill@cynkra.com>",
       "Repository": "PPM"
     },
     "isoband": {
@@ -2851,6 +2990,26 @@
       "Author": "Vitalie Spinu [aut, cre], Garrett Grolemund [aut], Hadley Wickham [aut], Davis Vaughan [ctb], Ian Lyttle [ctb], Imanuel Costigan [ctb], Jason Law [ctb], Doug Mitarotonda [ctb], Joseph Larmarange [ctb], Jonathan Boiser [ctb], Chel Hee Lee [ctb]",
       "Repository": "PPM"
     },
+    "magic": {
+      "Package": "magic",
+      "Version": "1.6-1-1",
+      "Source": "Repository",
+      "Title": "Create and Investigate Magic Squares",
+      "Authors@R": "person(given=c(\"Robin\", \"K. S.\"), family=\"Hankin\", role = c(\"aut\",\"cre\"), email=\"hankin.robin@gmail.com\", comment = c(ORCID = \"0000-0001-5982-0415\"))",
+      "Depends": [
+        "R (>= 4.2)",
+        "abind"
+      ],
+      "Description": "A collection of functions for the manipulation and analysis of arbitrarily dimensioned arrays.  The original motivation for the package was the development of efficient, vectorized algorithms for the creation and investigation of magic squares and high-dimensional magic hypercubes.",
+      "Maintainer": "Robin K. S. Hankin <hankin.robin@gmail.com>",
+      "License": "GPL-2",
+      "URL": "https://github.com/RobinHankin/magic, https://robinhankin.github.io/magic/",
+      "BugReports": "https://github.com/RobinHankin/magic/issues",
+      "NeedsCompilation": "no",
+      "Author": "Robin K. S. Hankin [aut, cre] (ORCID: <https://orcid.org/0000-0001-5982-0415>)",
+      "Repository": "PPM",
+      "Encoding": "UTF-8"
+    },
     "magrittr": {
       "Package": "magrittr",
       "Version": "2.0.5",
@@ -2880,6 +3039,24 @@
       "NeedsCompilation": "yes",
       "Author": "Stefan Milton Bache [aut, cph] (Original author and creator of magrittr), Hadley Wickham [aut], Lionel Henry [cre], Posit Software, PBC [cph, fnd] (ROR: <https://ror.org/03wc8by49>)",
       "Maintainer": "Lionel Henry <lionel@posit.co>",
+      "Repository": "PPM"
+    },
+    "mathjaxr": {
+      "Package": "mathjaxr",
+      "Version": "2.0-0",
+      "Source": "Repository",
+      "Date": "2025-12-01",
+      "Title": "Using 'Mathjax' in Rd Files",
+      "Authors@R": "person(given = \"Wolfgang\", family = \"Viechtbauer\", role = c(\"aut\",\"cre\"), email = \"wvb@wvbauer.com\", comment = c(ORCID = \"0000-0003-3463-4063\"))",
+      "Description": "Provides 'MathJax' and macros to enable its use within Rd files for rendering equations in the HTML help files.",
+      "License": "GPL-3",
+      "Encoding": "UTF-8",
+      "BuildManual": "TRUE",
+      "URL": "https://github.com/wviechtb/mathjaxr",
+      "BugReports": "https://github.com/wviechtb/mathjaxr/issues",
+      "NeedsCompilation": "no",
+      "Author": "Wolfgang Viechtbauer [aut, cre] (ORCID: <https://orcid.org/0000-0003-3463-4063>)",
+      "Maintainer": "Wolfgang Viechtbauer <wvb@wvbauer.com>",
       "Repository": "PPM"
     },
     "memoise": {
@@ -2916,6 +3093,225 @@
       "NeedsCompilation": "no",
       "Repository": "PPM",
       "Type": "source"
+    },
+    "meta": {
+      "Package": "meta",
+      "Version": "9.0-0",
+      "Source": "Repository",
+      "Title": "General Package for Meta-Analysis",
+      "Date": "2026-11-13",
+      "Depends": [
+        "R (>= 4.1.0)",
+        "metabook (>= 0.2-0)"
+      ],
+      "Imports": [
+        "metafor (>= 3.0-0)",
+        "grid",
+        "ggplot2",
+        "lme4",
+        "CompQuadForm",
+        "xml2",
+        "methods",
+        "readr",
+        "dplyr",
+        "magrittr",
+        "purrr",
+        "stringr",
+        "rlang",
+        "tibble",
+        "scales",
+        "cli"
+      ],
+      "Suggests": [
+        "netmeta",
+        "BiasedUrn",
+        "pimeta",
+        "estmeansd",
+        "robvis",
+        "brglm2",
+        "writexl",
+        "rmarkdown",
+        "knitr",
+        "ggpubr",
+        "gridExtra",
+        "gemtc",
+        "ragg",
+        "metadat",
+        "svglite",
+        "testthat",
+        "withr",
+        "clubSandwich"
+      ],
+      "Config/testthat/edition": "3",
+      "Authors@R": "person(\"Guido\", \"Schwarzer\", role = c(\"cre\", \"aut\"), email = \"guido.schwarzer@uniklinik-freiburg.de\", comment = c(ORCID = \"0000-0001-6214-9087\"))",
+      "Author": "Guido Schwarzer [cre, aut] (ORCID: <https://orcid.org/0000-0001-6214-9087>)",
+      "Maintainer": "Guido Schwarzer <guido.schwarzer@uniklinik-freiburg.de>",
+      "URL": "https://github.com/guido-s/meta/ https://link.springer.com/book/10.1007/978-3-319-21416-0",
+      "Description": "User-friendly general package providing standard methods for meta-analysis and supporting Schwarzer, Carpenter, and R<U+00FC>cker <DOI:10.1007/978-3-319-21416-0>, \"Meta-Analysis with R\" (2015): - common effect and random effects meta-analysis; - several plots (forest, funnel, Galbraith / radial, L'Abbe, Baujat, bubble); - three-level meta-analysis model; - generalised linear mixed model; - logistic regression with penalised likelihood for rare events; - Hartung-Knapp method for random effects model; - Kenward-Roger method for random effects model; - cluster-robust variance estimators for univariate random effects and three-level models; - prediction interval and density of the prediction distribution; - expected proportion of comparable studies with clinically important benefit or harm; - statistical tests for funnel plot asymmetry; - trim-and-fill method to evaluate bias in meta-analysis; - meta-regression; - cumulative meta-analysis and leave-one-out meta-analysis; - import data from 'RevMan Web' and 'RevMan 5'; - produce forest plot summarising several (subgroup) meta-analyses.",
+      "License": "GPL (>= 2)",
+      "Encoding": "UTF-8",
+      "VignetteBuilder": "knitr",
+      "Config/roxygen2/version": "8.1.1",
+      "NeedsCompilation": "no",
+      "Repository": "PPM"
+    },
+    "metabook": {
+      "Package": "metabook",
+      "Version": "0.2-0",
+      "Source": "Repository",
+      "Title": "Data Sets and Code for \"Meta-Analysis with R\"",
+      "Date": "2026-03-13",
+      "Depends": [
+        "R (>= 4.0.0)"
+      ],
+      "Suggests": [
+        "meta",
+        "netmeta",
+        "metasens",
+        "netdose"
+      ],
+      "Authors@R": "person(\"Guido\", \"Schwarzer\", role = c(\"cre\", \"aut\"), email = \"guido.schwarzer@uniklinik-freiburg.de\", comment = c(ORCID = \"0000-0001-6214-9087\"))",
+      "Author": "Guido Schwarzer [cre, aut] (ORCID: <https://orcid.org/0000-0001-6214-9087>)",
+      "Maintainer": "Guido Schwarzer <guido.schwarzer@uniklinik-freiburg.de>",
+      "URL": "https://github.com/guido-s/metabook/",
+      "Description": "Data sets and code supporting the second edition of \"Meta-Analysis with R\"; first edition: Schwarzer, Carpenter, and R<U+00FC>cker (2015) <DOI:10.1007/978-3-319-21416-0>.",
+      "LazyData": "TRUE",
+      "License": "GPL (>= 2)",
+      "Encoding": "UTF-8",
+      "RoxygenNote": "7.3.3",
+      "NeedsCompilation": "no",
+      "Repository": "PPM"
+    },
+    "metadat": {
+      "Package": "metadat",
+      "Version": "1.6-0",
+      "Source": "Repository",
+      "Date": "2026-04-29",
+      "Title": "Meta-Analysis Datasets",
+      "Authors@R": "c( person(given = \"Wolfgang\", family = \"Viechtbauer\", role = c(\"aut\",\"cre\"), email = \"wvb@metafor-project.org\", comment = c(ORCID = \"0000-0003-3463-4063\")), person(given = \"Thomas\", family=\"White\", role=\"aut\", email = \"thomas.white@sydney.edu.au\", comment = c(ORCID = \"0000-0002-3976-1734\")), person(given = \"Daniel\", family=\"Noble\", role=\"aut\", email = \"daniel.noble@anu.edu.au\", comment = c(ORCID = \"0000-0001-9460-8743\")), person(given = \"Alistair\", family=\"Senior\", role=\"aut\", email = \"alistair.senior@sydney.edu.au\", comment = c(ORCID = \"0000-0001-9805-7280\")), person(given = \"W. Kyle\", family=\"Hamilton\", role=\"aut\", email = \"whamilton@ucmerced.edu\", comment = c(ORCID = \"0000-0002-8642-7990\")), person(given = \"Guido\", family = \"Schwarzer\", role = \"dtc\", email = \"guido.schwarzer@uniklinik-freiburg.de\", comment = c(ORCID = \"0000-0001-6214-9087\")), person(given = \"Christian\", family = \"R<U+00F6>ver\", role = \"dtc\", email = \"christian.roever@med.uni-goettingen.de\", comment = c(ORCID = \"0000-0002-6911-698X\")))",
+      "Depends": [
+        "R (>= 4.0.0)"
+      ],
+      "Imports": [
+        "utils",
+        "tools",
+        "mathjaxr"
+      ],
+      "Suggests": [
+        "metafor",
+        "numDeriv",
+        "BiasedUrn",
+        "dfoptim",
+        "igraph",
+        "ape",
+        "testthat",
+        "digest",
+        "lme4",
+        "clubSandwich",
+        "meta",
+        "netmeta",
+        "mvtnorm",
+        "gridExtra",
+        "rms",
+        "bayesmeta",
+        "ellipse",
+        "metasens",
+        "mada"
+      ],
+      "Description": "A collection of meta-analysis datasets for teaching purposes, illustrating/testing meta-analytic methods, and validating published analyses.",
+      "License": "GPL (>= 2)",
+      "ByteCompile": "TRUE",
+      "LazyData": "TRUE",
+      "Encoding": "UTF-8",
+      "RdMacros": "mathjaxr",
+      "BuildManual": "TRUE",
+      "URL": "https://github.com/wviechtb/metadat, https://wviechtb.github.io/metadat/",
+      "BugReports": "https://github.com/wviechtb/metadat/issues",
+      "NeedsCompilation": "no",
+      "Author": "Wolfgang Viechtbauer [aut, cre] (ORCID: <https://orcid.org/0000-0003-3463-4063>), Thomas White [aut] (ORCID: <https://orcid.org/0000-0002-3976-1734>), Daniel Noble [aut] (ORCID: <https://orcid.org/0000-0001-9460-8743>), Alistair Senior [aut] (ORCID: <https://orcid.org/0000-0001-9805-7280>), W. Kyle Hamilton [aut] (ORCID: <https://orcid.org/0000-0002-8642-7990>), Guido Schwarzer [dtc] (ORCID: <https://orcid.org/0000-0001-6214-9087>), Christian R<U+00F6>ver [dtc] (ORCID: <https://orcid.org/0000-0002-6911-698X>)",
+      "Maintainer": "Wolfgang Viechtbauer <wvb@metafor-project.org>",
+      "Repository": "PPM"
+    },
+    "metafor": {
+      "Package": "metafor",
+      "Version": "5.2-1",
+      "Source": "Repository",
+      "Date": "2026-09-15",
+      "Title": "Meta-Analysis Package for R",
+      "Authors@R": "person(given = \"Wolfgang\", family = \"Viechtbauer\", role = c(\"aut\",\"cre\"), email = \"wvb@metafor-project.org\", comment = c(ORCID = \"0000-0003-3463-4063\"))",
+      "Depends": [
+        "R (>= 4.0.0)",
+        "methods",
+        "Matrix",
+        "metadat",
+        "numDeriv"
+      ],
+      "Imports": [
+        "stats",
+        "utils",
+        "graphics",
+        "grDevices",
+        "nlme",
+        "mathjaxr",
+        "pbapply",
+        "digest"
+      ],
+      "Suggests": [
+        "lme4",
+        "pracma",
+        "minqa",
+        "nloptr",
+        "dfoptim",
+        "ucminf",
+        "lbfgsb3c",
+        "subplex",
+        "BB",
+        "Rsolnp",
+        "alabama",
+        "optimParallel",
+        "optimx",
+        "CompQuadForm",
+        "mvtnorm",
+        "BiasedUrn",
+        "Epi",
+        "survival",
+        "GLMMadaptive",
+        "glmmTMB",
+        "car",
+        "multcomp",
+        "gsl",
+        "sp",
+        "ape",
+        "boot",
+        "clubSandwich",
+        "crayon",
+        "R.rsp",
+        "testthat",
+        "rmarkdown",
+        "wildmeta",
+        "emmeans",
+        "estmeansd",
+        "metaBLUE",
+        "rstudioapi",
+        "glmulti",
+        "MuMIn",
+        "mice",
+        "Amelia",
+        "calculus"
+      ],
+      "Description": "A comprehensive collection of functions for conducting meta-analyses in R. The package includes functions to calculate various effect sizes or outcome measures, fit equal-, fixed-, random-, and mixed-effects models to such data, carry out moderator and meta-regression analyses, and create various types of meta-analytical plots (e.g., forest, funnel, radial, L'Abbe, Baujat, bubble, and GOSH plots). For meta-analyses of binomial and person-time data, the package also provides functions that implement specialized methods, including the Mantel-Haenszel method, Peto's method, and a variety of suitable generalized linear (mixed-effects) models (i.e., mixed-effects logistic and Poisson regression models). Finally, the package provides functionality for fitting meta-analytic multivariate/multilevel models that account for non-independent sampling errors and/or true effects (e.g., due to the inclusion of multiple treatment studies, multiple endpoints, or other forms of clustering). Network meta-analyses and meta-analyses accounting for known correlation structures (e.g., due to phylogenetic relatedness) can also be conducted. An introduction to the package can be found in Viechtbauer (2010) <doi:10.18637/jss.v036.i03>.",
+      "License": "GPL (>= 2)",
+      "ByteCompile": "TRUE",
+      "Encoding": "UTF-8",
+      "RdMacros": "mathjaxr",
+      "VignetteBuilder": "R.rsp",
+      "BuildManual": "TRUE",
+      "URL": "https://www.metafor-project.org https://github.com/wviechtb/metafor https://wviechtb.github.io/metafor/ https://www.wvbauer.com",
+      "BugReports": "https://github.com/wviechtb/metafor/issues",
+      "NeedsCompilation": "no",
+      "Author": "Wolfgang Viechtbauer [aut, cre] (ORCID: <https://orcid.org/0000-0003-3463-4063>)",
+      "Maintainer": "Wolfgang Viechtbauer <wvb@metafor-project.org>",
+      "Repository": "PPM"
     },
     "mgcv": {
       "Package": "mgcv",
@@ -3104,6 +3500,61 @@
       "Maintainer": "Joe Zhu <joe.zhu@roche.com>",
       "Repository": "PPM"
     },
+    "netmeta": {
+      "Package": "netmeta",
+      "Version": "3.7-0",
+      "Source": "Repository",
+      "Title": "Network Meta-Analysis using Frequentist Methods",
+      "Date": "2026-09-17",
+      "Depends": [
+        "R (>= 4.0.0)",
+        "meta (>= 8.5-0)"
+      ],
+      "Imports": [
+        "Matrix",
+        "metafor",
+        "MASS",
+        "mvtnorm",
+        "magic",
+        "igraph",
+        "ggplot2",
+        "colorspace",
+        "grid",
+        "dplyr",
+        "magrittr",
+        "methods",
+        "stringr",
+        "tidyr",
+        "ggrepel",
+        "reshape2"
+      ],
+      "Suggests": [
+        "Rgraphviz",
+        "graph",
+        "rgl",
+        "gridExtra",
+        "tictoc",
+        "writexl",
+        "R.rsp",
+        "cccp",
+        "brglm2",
+        "crossnma",
+        "gemtc",
+        "rmarkdown",
+        "knitr"
+      ],
+      "Authors@R": "c(person(\"Gerta\", \"R<U+00FC>cker\", role = \"aut\", comment = c(ORCID = \"0000-0002-2192-2560\")), person(\"Ulrike\", \"Krahn\", role = \"aut\"), person(\"Jochem\", \"K<U+00F6>nig\", role = \"aut\", comment = c(ORCID = \"0000-0003-4683-0360\")), person(\"Orestis\", \"Efthimiou\", role = \"aut\", comment = c(ORCID = \"0000-0002-0955-7572\")), person(\"Annabel\", \"Davies\", role = \"aut\", comment = c(ORCID = \"0000-0003-2320-7701\")), person(\"Theodoros\", \"Papakonstantinou\", role = \"aut\", comment = c(ORCID = \"0000-0002-6630-6817\")), person(\"Theodoros\", \"Evrenoglou\", role = \"ctb\", comment = c(ORCID = \"0000-0003-3336-8058\")), person(\"Krzysztof\", \"Ciomek\", role = \"ctb\", comment = c(ORCID = \"0000-0002-2293-2146\", paste(\"Author of the original MIT-licensed\", \"R package hasseDiagram\"))), person(\"Nana-adjoa\", \"Kwarteng\", role = \"ctb\", comment = c(ORCID = \"0009-0009-0502-6887\")), person(\"Noosheen R.\", \"Tahmasebi\", role = \"ctb\", comment = c(ORCID = \"0009-0000-9660-3655\")), person(\"Guido\", \"Schwarzer\", role = c(\"aut\", \"cre\"), email = \"guido.schwarzer@uniklinik-freiburg.de\", comment = c(ORCID = \"0000-0001-6214-9087\")))",
+      "URL": "https://github.com/guido-s/netmeta",
+      "Description": "A comprehensive set of functions providing frequentist methods for network meta-analysis (Balduzzi et al., 2023) <doi:10.18637/jss.v106.i02> and supporting Schwarzer et al. (2015) <doi:10.1007/978-3-319-21416-0>, Chapter 8 \"Network Meta-Analysis\": - frequentist network meta-analysis following R<U+00FC>cker (2012) <doi:10.1002/jrsm.1058>; - additive network meta-analysis for combinations of treatments (R<U+00FC>cker et al., 2020) <doi:10.1002/bimj.201800167>; - network meta-analysis of binary data using the Mantel-Haenszel or non-central hypergeometric distribution method (Efthimiou et al., 2019) <doi:10.1002/sim.8158>, or penalised logistic regression (Evrenoglou et al., 2022) <doi:10.1002/sim.9562>; - rankograms and ranking of treatments by the Surface under the cumulative ranking curve (SUCRA) (Salanti et al., 2013) <doi:10.1016/j.jclinepi.2010.03.016>; - ranking of treatments using P-scores (frequentist analogue of SUCRAs without resampling) according to R<U+00FC>cker & Schwarzer (2015) <doi:10.1186/s12874-015-0060-8>; - split direct and indirect evidence to check consistency (Dias et al., 2010) <doi:10.1002/sim.3767>, (Efthimiou et al., 2019) <doi:10.1002/sim.8158>; - scatter plot to visualize local inconsistency (Wilson et al., 2026) <doi:10.1017/rsm.2026.10082>; - league table with network meta-analysis results; - 'comparison-adjusted' funnel plot (Chaimani & Salanti, 2012) <doi:10.1002/jrsm.57>; - net heat plot and design-based decomposition of Cochran's Q according to Krahn et al. (2013) <doi:10.1186/1471-2288-13-35>; - measures characterizing the flow of evidence between two treatments by K<U+00F6>nig et al. (2013) <doi:10.1002/sim.6001>; - automated drawing of network graphs described in R<U+00FC>cker & Schwarzer (2016) <doi:10.1002/jrsm.1143>; - partial order of treatment rankings ('poset') and Hasse diagram for 'poset' (Carlsen & Bruggemann, 2014) <doi:10.1002/cem.2569>; (R<U+00FC>cker & Schwarzer, 2017) <doi:10.1002/jrsm.1270>; - contribution matrix as described in Papakonstantinou et al. (2018) <doi:10.12688/f1000research.14770.3> and Davies et al. (2022) <doi:10.1002/sim.9346>; - path-based approach for detecting and assessing inconsistency; - network meta-regression with a single continuous or binary covariate (Kwarteng et al., 2026) <doi:10.21203/rs.3.rs-8235913/v1>; - subgroup network meta-analysis.",
+      "License": "GPL (>= 2) | file LICENSE",
+      "Encoding": "UTF-8",
+      "VignetteBuilder": "R.rsp, knitr",
+      "Config/roxygen2/version": "8.1.0",
+      "NeedsCompilation": "no",
+      "Author": "Gerta R<U+00FC>cker [aut] (ORCID: <https://orcid.org/0000-0002-2192-2560>), Ulrike Krahn [aut], Jochem K<U+00F6>nig [aut] (ORCID: <https://orcid.org/0000-0003-4683-0360>), Orestis Efthimiou [aut] (ORCID: <https://orcid.org/0000-0002-0955-7572>), Annabel Davies [aut] (ORCID: <https://orcid.org/0000-0003-2320-7701>), Theodoros Papakonstantinou [aut] (ORCID: <https://orcid.org/0000-0002-6630-6817>), Theodoros Evrenoglou [ctb] (ORCID: <https://orcid.org/0000-0003-3336-8058>), Krzysztof Ciomek [ctb] (ORCID: <https://orcid.org/0000-0002-2293-2146>, Author of the original MIT-licensed R package hasseDiagram), Nana-adjoa Kwarteng [ctb] (ORCID: <https://orcid.org/0009-0009-0502-6887>), Noosheen R. Tahmasebi [ctb] (ORCID: <https://orcid.org/0009-0000-9660-3655>), Guido Schwarzer [aut, cre] (ORCID: <https://orcid.org/0000-0001-6214-9087>)",
+      "Maintainer": "Guido Schwarzer <guido.schwarzer@uniklinik-freiburg.de>",
+      "Repository": "PPM"
+    },
     "nlme": {
       "Package": "nlme",
       "Version": "3.1-171",
@@ -3244,6 +3695,35 @@
       "Author": "Gábor Csárdi [aut, cre]",
       "Maintainer": "Gábor Csárdi <csardi.gabor@gmail.com>",
       "Repository": "PPM"
+    },
+    "pbapply": {
+      "Package": "pbapply",
+      "Version": "1.7-5",
+      "Source": "Repository",
+      "Type": "Package",
+      "Title": "Adding Progress Bar to '*apply' Functions",
+      "Date": "2026-08-31",
+      "Authors@R": "c(person(given = \"Peter\", family = \"Solymos\", comment = c(ORCID = \"0000-0001-7337-1740\"), role = c(\"aut\", \"cre\"), email = \"psolymos@gmail.com\"), person(given = \"Zygmunt\", family = \"Zawadzki\", role = \"aut\", email = \"zygmunt@zstat.pl\"), person(given = \"Henrik\",  family = \"Bengtsson\",  role = \"ctb\", email = \"henrikb@braju.com\"), person(\"R Core Team\", role = c(\"cph\", \"ctb\")))",
+      "Maintainer": "Peter Solymos <psolymos@gmail.com>",
+      "Description": "A lightweight package that adds progress bar to vectorized R functions ('*apply'). The implementation can easily be added to functions where showing the progress is useful (e.g. bootstrap). The type and style of the progress bar (with percentages or remaining time) can be set through options. Supports several parallel processing backends including mirai and future.",
+      "Depends": [
+        "R (>= 3.2.0)"
+      ],
+      "Imports": [
+        "parallel"
+      ],
+      "Suggests": [
+        "shiny",
+        "future",
+        "future.apply"
+      ],
+      "License": "GPL (>= 2)",
+      "URL": "https://github.com/psolymos/pbapply, https://peter.solymos.org/pbapply/",
+      "BugReports": "https://github.com/psolymos/pbapply/issues",
+      "NeedsCompilation": "no",
+      "Author": "Peter Solymos [aut, cre] (ORCID: <https://orcid.org/0000-0001-7337-1740>), Zygmunt Zawadzki [aut], Henrik Bengtsson [ctb], R Core Team [cph, ctb]",
+      "Repository": "PPM",
+      "Encoding": "UTF-8"
     },
     "pbkrtest": {
       "Package": "pbkrtest",
@@ -3491,6 +3971,43 @@
       "NeedsCompilation": "no",
       "Author": "Hadley Wickham [aut], Winston Chang [aut], Jim Hester [aut], Lionel Henry [aut, cre], Posit Software, PBC [cph, fnd], R Core team [ctb] (Some namespace and vignette code extracted from base R)",
       "Maintainer": "Lionel Henry <lionel@posit.co>",
+      "Repository": "PPM"
+    },
+    "plyr": {
+      "Package": "plyr",
+      "Version": "1.8.9",
+      "Source": "Repository",
+      "Title": "Tools for Splitting, Applying and Combining Data",
+      "Authors@R": "person(\"Hadley\", \"Wickham\", , \"hadley@rstudio.com\", role = c(\"aut\", \"cre\"))",
+      "Description": "A set of tools that solves a common set of problems: you need to break a big problem down into manageable pieces, operate on each piece and then put all the pieces back together.  For example, you might want to fit a model to each spatial location or time point in your study, summarise data by panels or collapse high-dimensional arrays to simpler summary statistics. The development of 'plyr' has been generously supported by 'Becton Dickinson'.",
+      "License": "MIT + file LICENSE",
+      "URL": "http://had.co.nz/plyr, https://github.com/hadley/plyr",
+      "BugReports": "https://github.com/hadley/plyr/issues",
+      "Depends": [
+        "R (>= 3.1.0)"
+      ],
+      "Imports": [
+        "Rcpp (>= 0.11.0)"
+      ],
+      "Suggests": [
+        "abind",
+        "covr",
+        "doParallel",
+        "foreach",
+        "iterators",
+        "itertools",
+        "tcltk",
+        "testthat"
+      ],
+      "LinkingTo": [
+        "Rcpp"
+      ],
+      "Encoding": "UTF-8",
+      "LazyData": "true",
+      "RoxygenNote": "7.2.3",
+      "NeedsCompilation": "yes",
+      "Author": "Hadley Wickham [aut, cre]",
+      "Maintainer": "Hadley Wickham <hadley@rstudio.com>",
       "Repository": "PPM"
     },
     "praise": {
@@ -3971,6 +4488,41 @@
       "Maintainer": "Kevin Ushey <kevin@rstudio.com>",
       "Repository": "CRAN"
     },
+    "reshape2": {
+      "Package": "reshape2",
+      "Version": "1.4.5",
+      "Source": "Repository",
+      "Title": "Flexibly Reshape Data: A Reboot of the Reshape Package",
+      "Authors@R": "person(\"Hadley\", \"Wickham\", , \"hadley@posit.co\", role = c(\"aut\", \"cre\"))",
+      "Description": "Flexibly restructure and aggregate data using just two functions: melt and 'dcast' (or 'acast').",
+      "License": "MIT + file LICENSE",
+      "URL": "https://github.com/hadley/reshape",
+      "BugReports": "https://github.com/hadley/reshape/issues",
+      "Depends": [
+        "R (>= 3.1)"
+      ],
+      "Imports": [
+        "plyr (>= 1.8.1)",
+        "Rcpp",
+        "stringr"
+      ],
+      "Suggests": [
+        "covr",
+        "lattice",
+        "testthat (>= 3.0.0)"
+      ],
+      "LinkingTo": [
+        "Rcpp"
+      ],
+      "Config/testthat/edition": "3",
+      "Encoding": "UTF-8",
+      "LazyData": "true",
+      "RoxygenNote": "7.3.3",
+      "NeedsCompilation": "yes",
+      "Author": "Hadley Wickham [aut, cre]",
+      "Maintainer": "Hadley Wickham <hadley@posit.co>",
+      "Repository": "PPM"
+    },
     "rlang": {
       "Package": "rlang",
       "Version": "1.3.0",
@@ -4370,6 +4922,31 @@
       "NeedsCompilation": "no",
       "Author": "Hadley Wickham [aut, cre, cph], Posit Software, PBC [cph, fnd]",
       "Maintainer": "Hadley Wickham <hadley@posit.co>",
+      "Repository": "PPM"
+    },
+    "survRM2": {
+      "Package": "survRM2",
+      "Version": "1.0-5",
+      "Source": "Repository",
+      "Type": "Package",
+      "Title": "Comparing Restricted Mean Survival Time",
+      "Date": "2026-11-21",
+      "Authors@R": "c(person(given = \"Hajime\", family = \"Uno\", role = c(\"aut\", \"cre\"), email = \"huno@jimmy.harvard.edu\"), person(given = \"Lu\", family = \"Tian\", role = \"aut\"), person(given = \"Miki\", family = \"Horiguchi\", role = \"aut\"), person(given = \"Angel\", family = \"Cronin\", role = \"aut\"), person(given = \"Chakib\", family = \"Battioui\", role = \"aut\"), person(given = \"James\", family = \"Bell\", role = \"ctb\"))",
+      "Depends": [
+        "survival"
+      ],
+      "Description": "Performs two-sample comparisons using the restricted mean survival time (RMST) as a summary measure of the survival time distribution. Three kinds of between-group contrast metrics (i.e., the difference in RMST, the ratio of RMST and the ratio of the restricted mean time lost (RMTL)) are computed. It performs an ANCOVA-type covariate adjustment as well as unadjusted analyses for those measures.",
+      "License": "GPL-2",
+      "Encoding": "UTF-8",
+      "Suggests": [
+        "knitr",
+        "rmarkdown"
+      ],
+      "VignetteBuilder": "knitr",
+      "Config/roxygen2/version": "8.1.1",
+      "NeedsCompilation": "no",
+      "Author": "Hajime Uno [aut, cre], Lu Tian [aut], Miki Horiguchi [aut], Angel Cronin [aut], Chakib Battioui [aut], James Bell [ctb]",
+      "Maintainer": "Hajime Uno <huno@jimmy.harvard.edu>",
       "Repository": "PPM"
     },
     "survival": {

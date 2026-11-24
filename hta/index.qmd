@@ -1,0 +1,49 @@
+---
+title: "From ADaM to an HTA dossier"
+subtitle: "Time-to-event and safety analyses, meta-analysis and indirect comparisons, on public data"
+---
+
+<!--
+Program    : hta/index.qmd
+Purpose    : Landing page of the HTA part: scope, data sources, how the
+             chapters are checked
+Author     : Ignacio Garcia Ribelles
+Created    : 2026-11-24
+Change log : 2026-11-24  IGR  Initial version
+-->
+
+This part takes the ADaM datasets built in this repository one step further.
+It asks what a health technology assessment (HTA) would want from them.
+An HTA body compares a new treatment with the treatments patients would
+otherwise get. It wants effect measures with confidence intervals, subgroup
+analyses and, when no head-to-head trial exists, indirect comparisons.
+
+This is a self-study on public data. It is not part of any regulatory or HTA
+submission, and the results support no claim about xanomeline.
+
+## Chapters
+
+1. **Time-to-event and safety analyses.** Kaplan-Meier, Cox models,
+   proportional hazards, restricted mean survival time, subgroup analyses
+   and effect measures for a binary safety endpoint. Data: ADSL, ADAE and
+   ADTTE of the CDISC pilot study CDISCPILOT01, read from the committed
+   transport files in `data/adam/`.
+2. **Meta-analysis.** Fixed-effect and random-effects models, heterogeneity,
+   forest and funnel plots, leave-one-out. Data: published trial results
+   shipped with the `{metadat}` package.
+3. **Indirect treatment comparison.** The Bucher method and a small network
+   meta-analysis. Data: a published network shipped with `{netmeta}`.
+   A text-only page on population-adjusted methods closes the chapter.
+
+The [glossary](glossary.qmd) defines the HTA terms used throughout.
+
+## How the numbers are checked
+
+Every quantity that a chapter computes by hand is also computed with an
+established package. A `testthat` test then checks that the two agree to
+within 1e-8. The hand calculations live in `R/hta_methods.R`. The chapters
+and the tests both use them, so the page and the test cannot drift apart.
+
+No data are downloaded when this part is built. The CDISC pilot data come
+from the transport files in the repository. The trial results come from
+installed R packages.

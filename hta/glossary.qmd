@@ -1,0 +1,71 @@
+---
+title: "Glossary"
+subtitle: "HTA terms in plain words"
+---
+
+<!--
+Program    : hta/glossary.qmd
+Purpose    : Plain-language definitions of the HTA terms used in the
+             chapters, two sentences each
+Author     : Ignacio Garcia Ribelles
+Created    : 2026-11-24
+Change log : 2026-11-24  IGR  Initial version
+-->
+
+**PICO.**
+Population, intervention, comparator and outcomes. It fixes the question an
+assessment answers, and in the EU joint clinical assessment each member state
+can ask for its own PICO.
+
+**Relative effectiveness.**
+How well a treatment works compared with the alternatives used for the same
+patients in practice. It is the core question of an HTA, while a marketing
+authorisation can rest on efficacy against placebo.
+
+**Joint clinical assessment.**
+The EU-wide assessment of relative clinical effectiveness under Regulation
+(EU) 2021/2282, applied since January 2025 to new cancer medicines and
+advanced therapy medicinal products. It reports the size of each effect and
+the certainty of the evidence, and it leaves the judgement of value to the
+member states.
+
+**Added benefit.**
+In the German AMNOG process, the extent to which a new medicine improves
+patient-relevant outcomes over the appropriate comparator therapy set by the
+Federal Joint Committee (G-BA). IQWiG assesses the evidence, the G-BA decides
+the extent of added benefit, and the price negotiation starts from that
+decision.
+
+**Anchored and unanchored comparison.**
+An anchored comparison links two treatments through a comparator arm that
+both trials share, so each trial keeps its randomisation. An unanchored
+comparison has no shared arm, for example two single-arm studies, and is only
+valid if every prognostic factor and effect modifier has been adjusted for.
+
+**Effect modifier.**
+A patient characteristic that changes the relative effect of a treatment, for
+example a hazard ratio that differs by disease stage. If effect modifiers are
+distributed differently across trials, an indirect comparison is biased, even
+when it is anchored.
+
+**Prognostic factor.**
+A characteristic that predicts the outcome whatever the treatment, for example
+age for mortality. It does not bias an anchored comparison on the relative
+scale, but it does bias an unanchored one unless it is adjusted for.
+
+**Transitivity.**
+The assumption that the trials in a network are similar enough that any
+patient could, in principle, have been randomised to any of the treatments.
+In practice it means that effect modifiers are distributed alike across the
+comparisons.
+
+**Consistency.**
+Agreement between the direct and the indirect evidence on the same
+comparison. It can be tested only where a closed loop of trials exists, and
+passing the test does not prove transitivity.
+
+**Estimand.**
+A precise statement of the treatment effect a study targets: population,
+treatments, endpoint, handling of intercurrent events and population-level
+summary (ICH E9(R1)). It fixes what question a number answers before anyone
+chooses how to estimate it.

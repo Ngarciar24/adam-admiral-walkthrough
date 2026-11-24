@@ -29,3 +29,6 @@ data/external/
 # broader ignore rule added to this file later cannot silently start excluding
 # the deliverable.
 !data/adam/*.xpt
+
+# HTA part: Quarto website output (rebuilt by quarto render hta)
+hta/_site/

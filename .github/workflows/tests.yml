@@ -1,8 +1,8 @@
 # Rebuild every ADaM dataset, the XPT files, define.xml, tables and figures;
 # compare with the published pilot ADaM; run the R test suite; then check the
 # exports from Python: cross-check, define.xml schema validation and ADaM
-# conformance checks; render the Quarto efficacy report and publish it, with
-# define.xml and the guides, on GitHub Pages. If a run fails on a missing
+# conformance checks; render the Quarto efficacy report and the HTA part
+# (hta/) and publish them, with define.xml and the guides, on GitHub Pages. If a run fails on a missing
 # system library, the fix is almost always one more package in the apt-get
 # line below.
 name: build-and-test
@@ -36,7 +36,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             libcurl4-openssl-dev libssl-dev libxml2-dev libfontconfig1-dev \
             libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev \
-            libtiff5-dev libjpeg-dev pandoc
+            libtiff5-dev libjpeg-dev libglpk-dev pandoc
 
       - uses: r-lib/actions/setup-r@v2
         with:
@@ -52,6 +52,9 @@ jobs:
 
       - name: Render the efficacy report
         run: quarto render reports/adascog_ancova.qmd
+
+      - name: Render the HTA part (reads committed files and package data only)
+        run: quarto render hta
 
       - uses: actions/setup-python@v5
         with:
