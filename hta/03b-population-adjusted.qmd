@@ -1,0 +1,143 @@
+---
+title: "Population-adjusted indirect comparisons"
+subtitle: "What MAIC and STC do, when they are used, and why assessors are cautious"
+---
+
+<!--
+Program    : hta/03b-population-adjusted.qmd
+Purpose    : Text-only page on population-adjusted indirect comparisons
+             (MAIC and STC), anchored and unanchored, with the main
+             reasons for caution and the guidance documents
+Author     : Ignacio Garcia Ribelles
+Created    : 2026-11-24
+Change log : 2026-11-24  IGR  Initial version
+Notes      : No code. Main sources: NICE DSU TSD 18 (2016) and the EU HTA
+             Coordination Group guidelines on direct and indirect
+             comparisons (2024).
+-->
+
+## The problem they try to solve
+
+The Bucher method and network meta-analysis assume that the trials do not
+differ in effect modifiers. Often that is not true. A typical case in a
+submission is a company with individual patient data (IPD) from its own trial
+and only published summary data for the competitor's trial. The two trial
+populations differ, for example in age or disease stage. If those
+characteristics change the treatment effect, a plain indirect comparison is
+biased.
+
+Population-adjusted methods use the IPD to make the company's trial look like
+the competitor's population. They then compare the two treatments in that
+population.
+
+## Matching-adjusted indirect comparison (MAIC)
+
+MAIC gives each patient in the IPD trial a weight. The weights are chosen so
+that the weighted means of selected baseline characteristics equal the means
+published for the competitor's trial. The weights come from a logistic-type
+model estimated by the method of moments, much like propensity score
+weighting. The outcome of the IPD trial is then re-estimated with these
+weights and compared with the published result (Signorovitch et al. 2010).
+
+The price is precision. Patients who look unlike the target population get
+small weights, so fewer patients effectively count. The effective sample size,
+(Σw)² / Σw², shows how much information is left. A large drop means that a
+few patients drive the result.
+
+## Simulated treatment comparison (STC)
+
+STC fits an outcome regression in the IPD trial, with the covariates and
+their interactions with treatment. It then predicts the outcome the IPD trial
+would have shown in a population with the competitor's covariate values
+(Caro and Ishak 2010). It uses the IPD more efficiently than weighting.
+In exchange it depends on a correct model, including its form on the chosen
+scale.
+
+## Anchored and unanchored use
+
+**Anchored.** Both trials share a comparator arm, for example placebo. The
+adjustment only needs to cover effect modifiers. Randomisation inside each
+trial is kept, because the comparison is still made through the shared arm.
+This is the setting where NICE DSU Technical Support Document 18 accepts
+population adjustment most readily.
+
+**Unanchored.** There is no shared arm. This happens with single-arm
+studies, common in oncology and rare diseases, or when the trials used
+different comparators that cannot be linked. The comparison is then between
+absolute outcomes in different studies. It is valid only if every prognostic
+factor and every effect modifier is adjusted for. That assumption cannot be
+checked, and in practice it is rarely met. TSD 18 therefore expects
+unanchored comparisons to carry bias of unknown size and asks submissions to
+estimate how large it could be.
+
+## Why assessment bodies are cautious
+
+- **Only reported covariates can be balanced.** Characteristics the
+  competitor did not publish cannot be adjusted for, and unmeasured ones are
+  never adjusted for.
+- **The target population is the competitor's trial population.** That may
+  not be the population of the decision. TSD 18 asks that the adjustment
+  target the population relevant to the decision.
+- **The result depends on who adjusts.** Two companies, each with its own
+  IPD, can produce two MAICs that reach opposite conclusions about the same
+  pair of drugs.
+- **Weighting cannot extrapolate.** If the populations barely overlap, MAIC
+  rests on a few heavily weighted patients and STC on model extrapolation.
+- **Covariate selection can be opportunistic.** Choosing covariates after
+  seeing results invites bias. Guidance asks for a pre-specified choice,
+  justified by clinical evidence that the covariates are effect modifiers or
+  prognostic factors.
+- **Non-collapsible effect measures.** Hazard ratios and odds ratios change
+  when one adjusts for covariates, even without confounding. Comparing a
+  conditional estimate from one trial with a marginal one from another can
+  mislead.
+- **Unanchored comparisons are observational in nature.** They lose the
+  protection of randomisation. German assessment practice, for example,
+  generally accepts conclusions from non-randomised comparisons only when the
+  effect is so large that bias alone cannot explain it.
+
+## What the guidance documents say, in brief
+
+**NICE DSU Technical Support Document 18** sets out when population-adjusted
+methods may be used and how to report them. Its main points: prefer anchored
+comparisons, adjust for all effect modifiers in an anchored comparison and
+for all prognostic factors and effect modifiers in an unanchored one, target
+the decision population, report the effective sample size and the
+distribution of weights, and quantify the likely bias of unanchored
+comparisons.
+
+**The EU HTA Coordination Group guidelines on direct and indirect
+comparisons** (a methodological and a practical guideline, both adopted in
+2024 for the joint clinical assessment) cover the same ground for the EU
+assessment. They treat population-adjusted and unanchored comparisons as
+carrying high uncertainty. They ask for pre-specified analyses, a justified
+choice of covariates and full reporting, so that assessors can judge how much
+the result can be trusted.
+
+Newer methods such as multilevel network meta-regression (ML-NMR) extend
+population adjustment to whole networks and to any target population. They
+still rest on the same kind of assumptions about effect modifiers.
+
+## References
+
+- Bucher HC, Guyatt GH, Griffith LE, Walter SD. The results of direct and
+  indirect treatment comparisons in meta-analysis of randomized controlled
+  trials. *Journal of Clinical Epidemiology* 1997, 50(6), 683-691.
+- Caro JJ, Ishak KJ. No head-to-head trial? Simulate the missing arms.
+  *PharmacoEconomics* 2010, 28(10), 957-967.
+- Member State Coordination Group on Health Technology Assessment.
+  Methodological guideline for quantitative evidence synthesis: direct and
+  indirect comparisons. Adopted 8 March 2024.
+- Member State Coordination Group on Health Technology Assessment. Practical
+  guideline for quantitative evidence synthesis: direct and indirect
+  comparisons. Adopted 8 March 2024.
+- Phillippo DM, Ades AE, Dias S, Palmer S, Abrams KR, Welton NJ. NICE DSU
+  Technical Support Document 18: Methods for population-adjusted indirect
+  comparisons in submissions to NICE. Decision Support Unit, 2016.
+- Phillippo DM, Dias S, Ades AE, et al. Multilevel network meta-regression
+  for population-adjusted treatment comparisons. *Journal of the Royal
+  Statistical Society, Series A* 2020, 183(3), 1189-1210.
+- Signorovitch JE, Wu EQ, Yu AP, et al. Comparative effectiveness without
+  head-to-head trials: a method for matching-adjusted indirect comparisons
+  applied to psoriasis treatment with adalimumab or etanercept.
+  *PharmacoEconomics* 2010, 28(10), 935-945.
