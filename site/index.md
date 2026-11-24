@@ -9,6 +9,7 @@ ADaM datasets, define.xml and analysis outputs for the public CDISC pilot study 
 ## Read
 
 - **[Primary efficacy report](report.html).** ADAS-Cog(11) change from baseline to Week 24 (LOCF), ANCOVA, read from the ADaM transport file. Model checks and sensitivity analyses: observed cases, Week 24 completers and an MMRM. The report stops if any cell differs from Table 4.
+- **[From ADaM to an HTA dossier](hta/index.html).** Self-study extension: time-to-event and safety analyses as an HTA dossier asks for them, meta-analysis and indirect treatment comparison, each hand calculation checked against an R package.
 - **[define.xml, rendered](data/adam/define.html).** Define-XML 2.1 for all five datasets, generated from one specification and validated against the CDISC schema ([XML](data/adam/define.xml)).
 - **[Analysis data reviewer's guide](docs/adrg.html)**, following the PHUSE ADRG template.
 - **[Analysis conventions (SAP extract)](docs/sap.html)**: populations, treatment, dates, baseline, analysis windows, adverse events.

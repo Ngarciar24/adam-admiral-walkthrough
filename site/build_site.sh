@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Assemble the GitHub Pages site in _site/ from files the pipeline already
 # produced: the rendered Quarto report, define.xml/define.html, the docs/
-# guides and the QC outputs. Run from the repository root after
-# `quarto render reports/adascog_ancova.qmd`.
+# guides, the QC outputs and the HTA part. Run from the repository root after
+# `quarto render reports/adascog_ancova.qmd` and `quarto render hta`.
 set -euo pipefail
 
 out=_site
@@ -11,6 +11,9 @@ mkdir -p "$out/data/adam" "$out/docs" "$out/outputs"
 
 # Report (self-contained HTML: embed-resources is set in the .qmd).
 cp reports/adascog_ancova.html "$out/report.html"
+
+# HTA part: a Quarto website of its own, rendered to hta/_site/.
+cp -r hta/_site "$out/hta"
 
 # define.xml and its rendered view keep their relative link to each other.
 cp data/adam/define.xml data/adam/define.html "$out/data/adam/"
