@@ -22,6 +22,12 @@ website:
     style: docked
     contents:
       - index.qmd
+      - 01-tte-safety.qmd
+      - 02-meta-analysis.qmd
+      - section: "3. Indirect treatment comparison"
+        contents:
+          - 03-indirect-comparison.qmd
+          - 03b-population-adjusted.qmd
       - glossary.qmd
   page-footer:
     left: "Self-study on public data. Not part of any regulatory or HTA submission."

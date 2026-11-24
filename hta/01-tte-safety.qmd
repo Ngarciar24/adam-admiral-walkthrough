@@ -1,0 +1,478 @@
+---
+title: "1. Time-to-event and safety analyses"
+subtitle: "What an HTA dossier asks of the CDISC pilot ADaM data"
+---
+
+<!--
+Program    : hta/01-tte-safety.qmd
+Study      : CDISCPILOT01 (public CDISC pilot test data)
+Purpose    : Time to first dermatologic adverse event the way an HTA dossier
+             asks for it: Kaplan-Meier, log-rank, Cox (unstratified and
+             stratified), proportional-hazards checks, RMST, subgroup
+             analyses with interaction tests, and effect measures for the
+             binary endpoint "at least one TEAE"
+Inputs     : data/adam/adsl.xpt, adae.xpt, adtte.xpt, adqsadas.xpt
+             (committed transport files)
+             R/hta_methods.R (hand calculations)
+Outputs    : hta/_site/01-tte-safety.html
+Author     : Ignacio Garcia Ribelles
+Created    : 2026-11-24
+Change log : 2026-11-24  IGR  Initial version
+Notes      : Fixed before any model was fitted. Comparison for subgroups:
+             Xanomeline High Dose vs placebo. Stratification factor: SITEGR1.
+             Subgroups: AGEGR1, SEX and baseline ADAS-Cog(11) up to 21 vs
+             above 21 (pooled median, blind to arm). RMST horizon: 168 days.
+             tests/testthat/test-hta-tte.R checks every hand calculation.
+-->
+
+```{r setup}
+library(haven)
+library(dplyr)
+library(tidyr)
+library(survival)
+library(survRM2)
+library(metafor)
+library(ggplot2)
+
+source("R/hta_methods.R")
+
+trt_levels <- c("Placebo", "Xanomeline Low Dose", "Xanomeline High Dose")
+# Okabe-Ito, as in programs/92_figures.R
+trt_colours <- c("Placebo" = "#0072B2", "Xanomeline Low Dose" = "#E69F00",
+                 "Xanomeline High Dose" = "#D55E00")
+
+fmt_p <- function(p) ifelse(p < 0.001, "<0.001", sprintf("%.3f", p))
+fmt_ci <- function(est, lo, hi, d = 2) {
+  f <- function(x) ifelse(is.na(x), "NE", formatC(x, format = "f", digits = d))
+  paste0(f(est), " (", f(lo), ", ", f(hi), ")")
+}
+
+# SAS transport stores missing character values as "".
+read_adam <- function(name) {
+  read_xpt(file.path("data/adam", paste0(name, ".xpt"))) %>%
+    mutate(across(where(is.character), ~ na_if(.x, "")))
+}
+adsl     <- read_adam("adsl")
+adae     <- read_adam("adae")
+adtte    <- read_adam("adtte")
+adqsadas <- read_adam("adqsadas")
+
+# Baseline ADAS-Cog(11) total, the baseline severity variable.
+base_adas <- adqsadas %>%
+  filter(PARAMCD == "ACTOT", ABLFL == "Y") %>%
+  distinct(USUBJID, BASE)
+
+tte <- adtte %>%
+  filter(PARAMCD == "TTDE", SAFFL == "Y") %>%
+  left_join(base_adas, by = "USUBJID") %>%
+  mutate(
+    TRTA   = factor(TRTA, levels = trt_levels),
+    EVENT  = 1 - CNSR,
+    AGEGR1 = factor(AGEGR1, levels = c("<65", "65-80", ">80")),
+    SEX    = factor(SEX, levels = c("F", "M")),
+    BASEGR = factor(ifelse(BASE <= 21, "<= 21", "> 21"), levels = c("<= 21", "> 21"))
+  )
+stopifnot(nrow(tte) == 254, !anyNA(tte$BASEGR))
+```
+
+## The question and the data
+
+The endpoint is the time from first dose to the first treatment-emergent
+dermatologic adverse event. ADTTE already holds it as `PARAMCD = "TTDE"`.
+Patients without such an event are censored at the end of their study
+participation. The population is the safety population. Patients are
+analysed by the treatment they actually received.
+
+This is a harm endpoint. A hazard ratio above 1 means more events on
+xanomeline. The xanomeline arms lost many patients early, so the arms were
+observed for very different lengths of time. That is the main reason an HTA
+body wants adverse events analysed as time to event. A simple proportion
+ignores how long each patient was at risk.
+
+```{r counts}
+tte %>%
+  group_by(Arm = TRTA) %>%
+  summarise(N = n(), Events = sum(EVENT), Censored = sum(CNSR),
+            `Median observed time, days` = median(AVAL),
+            `Longest observed time, days` = max(AVAL))
+```
+
+## Kaplan-Meier curves, medians and the log-rank test
+
+The Kaplan-Meier estimate multiplies, over each event time, the share of
+patients at risk who did not have the event. Censored patients count as at
+risk until they leave. The median is the first time the curve reaches 50%.
+Its confidence interval uses the log-log transformation, as in Table 3 of
+this repository.
+
+```{r km}
+km <- survfit(Surv(AVAL, EVENT) ~ TRTA, data = tte, conf.type = "log-log")
+kmt <- summary(km)$table
+
+data.frame(
+  Arm = trt_levels,
+  N = kmt[, "records"],
+  Events = kmt[, "events"],
+  `Median, days (95% CI)` = fmt_ci(kmt[, "median"], kmt[, "0.95LCL"], kmt[, "0.95UCL"], d = 0),
+  check.names = FALSE, row.names = NULL
+)
+```
+
+Fewer than half of the placebo patients had an event, so the placebo curve
+never reaches 50%. Its median is not estimable (NE).
+
+```{r km-plot, fig.height = 5.5}
+km_dat <- broom::tidy(km) %>%
+  mutate(TRTA = factor(sub("^TRTA=", "", strata), levels = trt_levels)) %>%
+  select(TRTA, time, estimate, n.censor)
+km_dat <- bind_rows(
+  tibble(TRTA = factor(trt_levels, levels = trt_levels), time = 0, estimate = 1, n.censor = 0),
+  km_dat
+)
+risk_times <- seq(0, 196, by = 28)
+at_risk <- summary(km, times = risk_times, extend = TRUE)
+risk_dat <- tibble(
+  TRTA   = factor(sub("^TRTA=", "", at_risk$strata), levels = trt_levels),
+  time   = at_risk$time,
+  n.risk = at_risk$n.risk
+)
+
+p_km <- ggplot(km_dat, aes(time, estimate, colour = TRTA)) +
+  geom_step(linewidth = 0.8) +
+  geom_point(data = filter(km_dat, n.censor > 0), shape = 3, size = 1.8) +
+  geom_hline(yintercept = 0.5, linetype = "dotted", colour = "grey50") +
+  scale_colour_manual(values = trt_colours, breaks = trt_levels) +
+  scale_x_continuous(breaks = risk_times, limits = c(0, 200)) +
+  scale_y_continuous(limits = c(0, 1), labels = scales::percent) +
+  labs(x = "Days since first dose", y = "Free of dermatologic AE",
+       colour = NULL, caption = "+ = censored. Dotted line: median.") +
+  theme_minimal(base_size = 11) +
+  theme(legend.position = "top", panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, colour = "grey40"))
+
+p_risk <- ggplot(risk_dat, aes(time, TRTA, label = n.risk, colour = TRTA)) +
+  geom_text(size = 3.3) +
+  scale_colour_manual(values = trt_colours, guide = "none") +
+  scale_x_continuous(breaks = risk_times, limits = c(0, 200)) +
+  scale_y_discrete(limits = rev(trt_levels)) +
+  labs(x = NULL, y = NULL, title = "Number at risk") +
+  theme_minimal(base_size = 10) +
+  theme(panel.grid = element_blank(), axis.text.x = element_blank(),
+        plot.title = element_text(size = 10))
+
+cowplot::plot_grid(p_km, p_risk, ncol = 1, rel_heights = c(4, 1.3), align = "v", axis = "lr")
+```
+
+The log-rank test compares, at every event time, the observed number of
+events in one arm with the number expected if both arms had the same hazard.
+It sums the differences over time and divides by their variance. The result
+is a chi-squared statistic with one degree of freedom for two arms.
+
+The code below does this by hand for each active arm against placebo. It
+then calls `survival::survdiff()`. The two must agree.
+
+```{r logrank}
+vs_placebo_data <- function(arm) {
+  tte %>% filter(TRTA %in% c("Placebo", arm)) %>% droplevels()
+}
+
+lr_tab <- lapply(trt_levels[-1], function(arm) {
+  d    <- vs_placebo_data(arm)
+  hand <- logrank_hand(d$AVAL, d$EVENT, d$TRTA == arm)
+  pkg  <- survdiff(Surv(AVAL, EVENT) ~ TRTA, data = d)
+  data.frame(Comparison = paste(arm, "vs placebo"),
+             `O - E (active)` = round(hand$o_minus_e, 2),
+             `Chi-squared, hand` = hand$chisq,
+             `Chi-squared, survdiff` = pkg$chisq,
+             `p-value` = fmt_p(hand$p), check.names = FALSE)
+})
+bind_rows(lr_tab)
+
+# Three-arm test, for completeness.
+lr3 <- survdiff(Surv(AVAL, EVENT) ~ TRTA, data = tte)
+```
+
+The three-arm log-rank test gives chi-squared `r round(lr3$chisq, 1)` on 2
+degrees of freedom (p `r fmt_p(pchisq(lr3$chisq, 2, lower.tail = FALSE))`).
+
+## Cox model: hazard ratio against placebo
+
+The Cox model assumes that the hazard in the active arm is a constant
+multiple of the hazard in the placebo arm. That multiple is the hazard ratio.
+The model leaves the shape of the baseline hazard free.
+
+The stratified model gives each pooled site (`SITEGR1`) its own baseline
+hazard and estimates one common hazard ratio across sites. The factor was
+fixed before the analysis. It is the same factor that the primary efficacy
+ANCOVA adjusts for. Stratification is used for three reasons. Sites can
+differ in how often and how carefully skin events are recorded. Stratifying
+removes that difference from the comparison without assuming how it acts on
+the hazard. It also keeps the analysis close to the design of the trial,
+which is what HTA bodies expect.
+
+```{r cox}
+cox_tab <- lapply(trt_levels[-1], function(arm) {
+  d  <- vs_placebo_data(arm)
+  c0 <- summary(coxph(Surv(AVAL, EVENT) ~ TRTA, data = d))$conf.int
+  c1 <- summary(coxph(Surv(AVAL, EVENT) ~ TRTA + strata(SITEGR1), data = d))$conf.int
+  data.frame(Comparison = paste(arm, "vs placebo"),
+             `HR (95% CI), unstratified` = fmt_ci(c0[1, 1], c0[1, 3], c0[1, 4]),
+             `HR (95% CI), stratified by SITEGR1` = fmt_ci(c1[1, 1], c1[1, 3], c1[1, 4]),
+             check.names = FALSE)
+})
+bind_rows(cox_tab)
+```
+
+Both doses raise the hazard of a first dermatologic event about four- to
+fivefold. Stratification barely moves the estimates. That is expected in a
+randomised trial where arms are balanced within sites.
+
+## Checking proportional hazards
+
+The hazard ratio is one number for the whole follow-up. It is only a fair
+summary if the ratio is roughly constant over time. Three checks are used.
+
+1. **Schoenfeld residuals.** For each event, the residual compares the
+   treatment of the patient who had the event with the average treatment of
+   those at risk. If the hazard ratio is constant, the residuals show no trend
+   over time. `cox.zph()` tests the correlation between the scaled residuals
+   and time.
+2. **Plot of the scaled residuals over time.** The smooth line is an
+   estimate of the log hazard ratio at each time. A flat line supports
+   proportional hazards.
+3. **Log-log plot.** Under proportional hazards, the curves of
+   log(-log S(t)) against log(t) are parallel. Crossing or converging curves
+   are a warning.
+
+```{r ph}
+cox_all <- coxph(Surv(AVAL, EVENT) ~ TRTA, data = tte)
+zph <- cox.zph(cox_all, transform = "km", terms = FALSE)  # one row per arm
+zph
+```
+
+```{r ph-plot, fig.height = 4}
+par(mfrow = c(1, 2), mar = c(4, 4, 2, 1))
+plot(zph[1], resid = TRUE, se = TRUE, main = "Low dose vs placebo", ylab = "Beta(t)")
+abline(h = coef(cox_all)[1], lty = 2, col = "grey40")
+plot(zph[2], resid = TRUE, se = TRUE, main = "High dose vs placebo", ylab = "Beta(t)")
+abline(h = coef(cox_all)[2], lty = 2, col = "grey40")
+```
+
+```{r loglog, fig.height = 4}
+broom::tidy(km) %>%
+  filter(estimate > 0, estimate < 1) %>%
+  mutate(TRTA = factor(sub("^TRTA=", "", strata), levels = trt_levels)) %>%
+  ggplot(aes(log(time), log(-log(estimate)), colour = TRTA)) +
+  geom_step(linewidth = 0.8) +
+  scale_colour_manual(values = trt_colours) +
+  labs(x = "log(days)", y = "log(-log S(t))", colour = NULL) +
+  theme_minimal(base_size = 11) +
+  theme(legend.position = "top")
+```
+
+The global test gives p = `r sprintf("%.2f", zph$table["GLOBAL", "p"])`.
+The residual plots are flat within their bands, and the log-log curves run
+roughly parallel. There is no evidence against proportional hazards here.
+
+**If the check had failed**, a single hazard ratio would be an average of a
+changing effect. Its value would then depend on how long patients were
+followed and on when they were censored. I would then:
+
+- report the restricted mean survival time difference (next section), which
+  needs no proportional-hazards assumption,
+- report a piecewise hazard ratio with time intervals fixed in advance, by
+  splitting follow-up with `survSplit()` and fitting a treatment-by-interval
+  interaction,
+- report event-free proportions at fixed time points (milestones) with their
+  differences,
+- for testing, consider a weighted or max-combo log-rank test fixed in the
+  analysis plan.
+
+## Restricted mean survival time
+
+The restricted mean survival time (RMST) up to a horizon τ is the area under
+the Kaplan-Meier curve from 0 to τ. Here it is the mean number of days free
+of a dermatologic event during the first τ days. The difference between arms
+is in days. It does not need proportional hazards, and patients and
+clinicians can read it directly.
+
+τ = 168 days (Week 24, the planned treatment period) was fixed in advance.
+It must not exceed the longest observed time in any arm. The shortest of
+these is 189 days.
+Few xanomeline patients remain at risk near day 168. They no longer have
+events, so the curve is flat there and adds little variance.
+
+The code computes the area and its variance by hand, then with
+`survRM2::rmst2()`.
+
+```{r rmst}
+tau <- 168
+rmst_tab <- lapply(trt_levels[-1], function(arm) {
+  d    <- vs_placebo_data(arm)
+  act  <- d$TRTA == arm
+  hand <- rmst_diff_hand(d$AVAL, d$EVENT, act, tau)
+  pkg  <- rmst2(d$AVAL, d$EVENT, as.integer(act), tau = tau)$unadjusted.result
+  data.frame(Comparison = paste(arm, "vs placebo"),
+             `RMST active, days` = round(hand$rmst1, 1),
+             `RMST placebo, days` = round(hand$rmst0, 1),
+             `Difference (95% CI), hand` = fmt_ci(hand$diff, hand$lower, hand$upper, d = 1),
+             `Difference (95% CI), survRM2` = fmt_ci(pkg[1, 1], pkg[1, 2], pkg[1, 3], d = 1),
+             check.names = FALSE)
+})
+bind_rows(rmst_tab)
+```
+
+Over the first 24 weeks, high-dose patients were free of dermatologic events
+for about 79 fewer days on average than placebo patients.
+
+## Subgroup analyses
+
+Three subgroup variables were fixed in advance: age group (`AGEGR1`), sex,
+and baseline disease severity. Severity is the baseline ADAS-Cog(11) total,
+split at the pooled median of 21 without looking at the arms. Higher scores
+mean worse cognition. The comparison is the high dose against placebo.
+
+For each subgroup level the code fits a Cox model within that level. The
+question that matters is different. Does the hazard ratio differ between
+levels? The test of treatment-by-subgroup interaction answers it. It is a
+likelihood-ratio test comparing a model with treatment and subgroup against
+one that adds their interaction.
+
+```{r subgroups}
+hd <- vs_placebo_data("Xanomeline High Dose")
+
+subgroup_vars <- c(AGEGR1 = "Age group", SEX = "Sex", BASEGR = "Baseline ADAS-Cog(11)")
+
+sub_res <- lapply(names(subgroup_vars), function(v) {
+  f_main <- as.formula(paste("Surv(AVAL, EVENT) ~ TRTA +", v))
+  f_int  <- as.formula(paste("Surv(AVAL, EVENT) ~ TRTA *", v))
+  p_int  <- anova(coxph(f_main, data = hd), coxph(f_int, data = hd))[2, "Pr(>|Chi|)"]
+  lv <- levels(hd[[v]])
+  bind_rows(lapply(lv, function(l) {
+    d  <- hd[hd[[v]] == l, ]
+    ci <- summary(coxph(Surv(AVAL, EVENT) ~ TRTA, data = d))$conf.int
+    data.frame(Variable = subgroup_vars[[v]], Level = l,
+               N = nrow(d),
+               `Events (HD / PBO)` = paste0(sum(d$EVENT[d$TRTA != "Placebo"]), " / ",
+                                            sum(d$EVENT[d$TRTA == "Placebo"])),
+               hr = ci[1, 1], lo = ci[1, 3], hi = ci[1, 4],
+               p_int = p_int, check.names = FALSE)
+  }))
+})
+sub_res <- bind_rows(sub_res)
+overall <- summary(coxph(Surv(AVAL, EVENT) ~ TRTA, data = hd))$conf.int
+
+sub_res %>%
+  mutate(`HR (95% CI)` = fmt_ci(hr, lo, hi),
+         `Interaction p` = ifelse(duplicated(Variable), "", fmt_p(p_int))) %>%
+  select(Variable, Level, N, `Events (HD / PBO)`, `HR (95% CI)`, `Interaction p`)
+```
+
+```{r forest, fig.height = 4.5}
+forest_dat <- bind_rows(
+  data.frame(Variable = "All patients", Level = "", hr = overall[1, 1],
+             lo = overall[1, 3], hi = overall[1, 4], p_int = NA),
+  sub_res %>% select(Variable, Level, hr, lo, hi, p_int)
+) %>%
+  mutate(label = ifelse(Level == "", Variable, paste0(Variable, ": ", Level)),
+         label = factor(label, levels = rev(label)))
+
+ggplot(forest_dat, aes(hr, label)) +
+  geom_vline(xintercept = 1, colour = "grey40") +
+  geom_vline(xintercept = overall[1, 1], linetype = "dashed", colour = "#D55E00") +
+  geom_errorbarh(aes(xmin = lo, xmax = hi), height = 0.2) +
+  geom_point(aes(shape = Level == ""), size = 2.5) +
+  scale_shape_manual(values = c(15, 18), guide = "none") +
+  scale_x_log10() +
+  labs(x = "Hazard ratio, high dose vs placebo (log scale)", y = NULL,
+       caption = "Dashed line: overall hazard ratio. Values above 1 mean more events on xanomeline.") +
+  theme_minimal(base_size = 11) +
+  theme(panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, colour = "grey40"))
+```
+
+None of the interaction tests is significant at the 5% level. The smallest
+p-value is `r fmt_p(min(sub_res$p_int))`, for
+`r tolower(sub_res$Variable[which.min(sub_res$p_int)])`. All subgroup intervals
+include the overall estimate.
+
+**Multiplicity.** Three subgroup variables give three interaction tests and
+seven subgroup estimates. At the 5% level, one false signal somewhere is
+quite likely even when the effect is the same in everyone.
+
+**Why a subgroup p-value alone proves nothing.** A significant effect in one
+subgroup and a non-significant effect in another does not show that the
+effects differ. The second subgroup may simply be smaller. Only the
+interaction test compares the subgroups with each other.
+
+## Binary endpoint: at least one adverse event
+
+The share of patients with at least one treatment-emergent adverse event
+(TEAE) is a second, simpler summary. Three effect measures describe the
+same 2x2 table, and an HTA dossier usually reports all three.
+
+- **Risk ratio (RR):** risk on active divided by risk on placebo.
+- **Odds ratio (OR):** odds on active divided by odds on placebo.
+- **Risk difference (RD):** risk on active minus risk on placebo, shown as
+  a proportion (0.20 is 20 percentage points).
+
+RR and OR are estimated on the log scale and back-transformed. The code
+computes them by hand and with `metafor::escalc()`.
+
+```{r binary}
+any_teae <- adsl %>%
+  filter(SAFFL == "Y") %>%
+  mutate(TRTA = factor(TRT01A, levels = trt_levels),
+         ANY  = USUBJID %in% adae$USUBJID[adae$TRTEMFL == "Y"]) %>%
+  group_by(TRTA) %>%
+  summarise(n = sum(ANY), N = n(), .groups = "drop")
+
+pbo <- any_teae %>% filter(TRTA == "Placebo")
+
+bin_tab <- lapply(trt_levels[-1], function(arm) {
+  a    <- any_teae %>% filter(TRTA == arm)
+  hand <- effect_2x2_hand(a$n, a$N, pbo$n, pbo$N)
+  pkg  <- sapply(c("RR", "OR", "RD"), function(m)
+    escalc(m, ai = a$n, n1i = a$N, ci = pbo$n, n2i = pbo$N)$yi)
+  data.frame(Comparison = paste(arm, "vs placebo"),
+             `Active, n/N (%)` = sprintf("%d/%d (%.1f%%)", a$n, a$N, 100 * a$n / a$N),
+             `Placebo, n/N (%)` = sprintf("%d/%d (%.1f%%)", pbo$n, pbo$N, 100 * pbo$n / pbo$N),
+             Measure = hand$measure,
+             `Estimate (95% CI)` = fmt_ci(hand$estimate, hand$lower, hand$upper),
+             `Hand - escalc (analysis scale)` = signif(hand$yi - pkg, 2),
+             check.names = FALSE, row.names = NULL)
+})
+bind_rows(bin_tab)
+```
+
+The three measures tell the same story at very different sizes. For the
+high dose the risk ratio is about 1.27 and the odds ratio about 7.4. When
+the event is common, here over 75% on placebo, the odds ratio is far from
+the risk ratio. It should not be read as "seven times the risk". The risk
+difference of about 20 percentage points is the easiest to read. It also
+lets one compute a number needed to harm of about 5.
+
+## What a German dossier would ask here
+
+In the German benefit assessment (AMNOG), the company submits a dossier and
+IQWiG assesses it for the Federal Joint Committee (G-BA). For a safety
+endpoint like this one, the dossier would usually be asked for the
+following.
+
+- **Adverse events as time to event.** Arms are often observed for different
+  lengths of time, for example because patients stop treatment early. A
+  proportion then compares unequal windows. A Kaplan-Meier analysis with a
+  hazard ratio deals with that.
+- **Effect measures with 95% confidence intervals.** Hazard ratios for time
+  to event, and relative risks or odds ratios with risk differences for
+  binary endpoints. Each with the number of patients and events per arm.
+- **Standard sets of adverse events.** All adverse events, serious ones,
+  severe ones (for example CTCAE grade 3 or higher) and discontinuations due
+  to adverse events. Specific events by system organ class and preferred
+  term are added where they matter.
+- **Subgroup analyses with interaction tests.** Usually age, sex, region or
+  centre and disease severity, fixed in advance. The interaction test, not a
+  p-value within one subgroup, decides whether an effect differs. Results
+  are shown only for subgroups large enough to support them.
+- **Methods fixed before the data are seen**, with sensitivity analyses
+  where an assumption such as proportional hazards is in doubt.
