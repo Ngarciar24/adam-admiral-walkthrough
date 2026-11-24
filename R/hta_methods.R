@@ -112,6 +112,20 @@ effect_2x2_hand <- function(a, n1, c, n0, level = 0.95) {
   )
 }
 
+# Log odds ratio and its variance for one study, active vs control. If any
+# cell is zero, 0.5 is added to all four cells first (the default of
+# netmeta::pairwise() and metafor::escalc()).
+log_or_hand <- function(a, n1, c, n0, incr = 0.5) {
+  zero <- a == 0 | c == 0 | a == n1 | c == n0
+  k    <- ifelse(zero, incr, 0)
+  b    <- n1 - a + k     # non-events, active
+  d    <- n0 - c + k     # non-events, control
+  a    <- a + k
+  c    <- c + k
+  data.frame(yi = log((a * d) / (b * c)), vi = 1 / a + 1 / b + 1 / c + 1 / d,
+             corrected = zero)
+}
+
 # =============================================================================
 # 3. Meta-analysis
 # =============================================================================
