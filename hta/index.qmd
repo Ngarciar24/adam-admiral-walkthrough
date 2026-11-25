@@ -35,6 +35,10 @@ submission, and the results support no claim about xanomeline.
    **1b. Efficacy as an assessment body reads it.** Hedges' g against
    IQWiG's irrelevance threshold, a responder analysis at 15% of the scale
    range, and one summary table in dossier layout.
+
+   **1c. Parametric survival and extrapolation.** Six standard models fitted
+   to 3 years of breast cancer follow-up, extrapolated and checked against
+   the later data, following NICE DSU Technical Support Document 14.
 2. **Meta-analysis.** Fixed-effect and random-effects models, heterogeneity,
    forest and funnel plots, leave-one-out, and the pooling of hazard ratios
    in oncology the way IQWiG runs it. Data: published trial results shipped

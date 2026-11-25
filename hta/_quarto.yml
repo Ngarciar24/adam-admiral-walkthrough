@@ -24,6 +24,7 @@ website:
       - index.qmd
       - 01-tte-safety.qmd
       - 01b-efficacy-dossier.qmd
+      - 01c-parametric-survival.qmd
       - 02-meta-analysis.qmd
       - section: "3. Indirect treatment comparison"
         contents:
