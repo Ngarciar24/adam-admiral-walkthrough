@@ -18,7 +18,7 @@ ADaM datasets, define.xml and analysis outputs for the public CDISC pilot study 
 
 ## What it checks
 
-- 399 `testthat` expectations: 225 on the derivations, including unit tests of the baseline rule on hand-built data, and 174 on the HTA part.
+- 425 `testthat` expectations: 225 on the derivations, including unit tests of the baseline rule on hand-built data, and 200 on the HTA part.
 - 71 ADaM conformance checks.
 - An independent Python re-derivation of the treatment-emergent flag and the time-to-event data.
 - GitHub Actions rebuilds every dataset, transport file, table and this site on every push, in a pinned `{renv}` environment.
