@@ -6,7 +6,8 @@
 #              table, inverse-variance pooling, REML between-trial variance,
 #              Hartung-Knapp interval, heterogeneity statistics, prediction
 #              interval, Paule-Mandel tau^2, hazard ratios from O - E and V,
-#              Hedges' g and the Bucher indirect comparison
+#              Hedges' g, parametric survival models and the Bucher
+#              indirect comparison
 # Inputs     : vectors passed by the caller
 # Outputs    : functions only. Each returns a named list or a data frame
 # Author     : Ignacio Garcia Ribelles
@@ -15,6 +16,9 @@
 #              2026-11-25  IGR  Hedges' g, Paule-Mandel tau^2, log hazard
 #                               ratio from O - E and V or from a reported
 #                               interval, test for subgroup differences
+#              2026-11-25  IGR  Parametric survival: survival and density
+#                               functions, log-likelihood, exponential MLE,
+#                               restricted mean from a fitted model
 # Notes      : Base R only, written from the formulas, so that each result
 #              can be checked against an established package
 #              (tests/testthat/test-hta-*.R, tolerance 1e-8). The chapters in
@@ -82,6 +86,57 @@ rmst_diff_hand <- function(time, event, active, tau, level = 0.95) {
   list(rmst1 = r1$rmst, rmst0 = r0$rmst, diff = est, se = se,
        lower = est - z * se, upper = est + z * se,
        p = 2 * pnorm(-abs(est / se)))
+}
+
+# -----------------------------------------------------------------------------
+# Parametric survival models, in the parameterisation of {flexsurv}.
+#   exp      rate                 S(t) = exp(-rate t)
+#   weibull  shape a, scale b     S(t) = exp(-(t / b)^a)
+#   gompertz shape a, rate b      S(t) = exp(-(b / a) (exp(a t) - 1))
+#   llogis   shape a, scale b     S(t) = 1 / (1 + (t / b)^a)
+#   lnorm    meanlog m, sdlog s   S(t) = 1 - Phi((log t - m) / s)
+# The density is f(t) = h(t) S(t), with h the hazard.
+param_surv_hand <- function(dist, t, pars) {
+  p <- as.list(pars)
+  switch(dist,
+    exp = list(S = exp(-p$rate * t), f = p$rate * exp(-p$rate * t)),
+    weibull = {
+      z <- (t / p$scale)^p$shape
+      list(S = exp(-z), f = p$shape / p$scale * (t / p$scale)^(p$shape - 1) * exp(-z))
+    },
+    gompertz = {
+      S <- exp(-(p$rate / p$shape) * (exp(p$shape * t) - 1))
+      list(S = S, f = p$rate * exp(p$shape * t) * S)
+    },
+    llogis = {
+      z <- (t / p$scale)^p$shape
+      list(S = 1 / (1 + z),
+           f = p$shape / p$scale * (t / p$scale)^(p$shape - 1) / (1 + z)^2)
+    },
+    lnorm = {
+      z <- (log(t) - p$meanlog) / p$sdlog
+      list(S = pnorm(-z), f = dnorm(z) / (t * p$sdlog))
+    },
+    stop("Unknown distribution: ", dist)
+  )
+}
+
+# Log-likelihood with right censoring: events contribute log f(t), censored
+# times contribute log S(t).
+param_loglik_hand <- function(dist, time, event, pars) {
+  d <- param_surv_hand(dist, time, pars)
+  sum(event * log(d$f) + (1 - event) * log(d$S))
+}
+
+# The exponential model has a closed-form maximum likelihood estimate:
+# the number of events divided by the total time at risk.
+exp_rate_hand <- function(time, event) sum(event) / sum(time)
+
+# Restricted mean survival time from a fitted parametric model: the area
+# under S(t) from 0 to tau.
+param_rmst_hand <- function(dist, pars, tau) {
+  stats::integrate(function(t) param_surv_hand(dist, t, pars)$S, 0, tau,
+                   rel.tol = 1e-10)$value
 }
 
 # =============================================================================
