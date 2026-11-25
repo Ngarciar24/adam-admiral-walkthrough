@@ -1,0 +1,305 @@
+---
+title: "1b. Efficacy as an assessment body reads it"
+subtitle: "Standardised mean difference, responder analysis and one table in dossier layout"
+---
+
+<!--
+Program    : hta/01b-efficacy-dossier.qmd
+Study      : CDISCPILOT01 (public CDISC pilot test data)
+Purpose    : ADAS-Cog(11) change to Week 24 read the way IQWiG reads a
+             scale: Hedges' g against the irrelevance threshold of 0.2 and
+             a responder analysis at 15% of the scale range. Then one
+             summary table in dossier layout for the high dose against
+             placebo
+Inputs     : data/adam/adsl.xpt, adae.xpt, adqsadas.xpt (committed
+             transport files)
+             outputs/t4_adascog_wk24_ancova.csv (Table 4, for a cross-check)
+             R/hta_methods.R, R/hta_subgroups.R, R/hta_ae_tte.R
+Outputs    : hta/_site/01b-efficacy-dossier.html
+Author     : Ignacio Garcia Ribelles
+Created    : 2026-11-25
+Change log : 2026-11-25  IGR  Initial version
+Notes      : Thresholds checked against IQWiG, General Methods, version 7.0
+             of 19 September 2023, section 9.3.3. Population and data as in
+             Table 4: efficacy population, Week 24, LOCF, planned treatment.
+             tests/testthat/test-hta-efficacy.R checks the hand
+             calculations.
+-->
+
+```{r setup}
+library(haven)
+library(dplyr)
+library(survival)
+library(metafor)
+
+source("R/hta_methods.R")
+source("R/hta_subgroups.R")
+source("R/hta_ae_tte.R")
+
+trt_levels <- c("Placebo", "Xanomeline Low Dose", "Xanomeline High Dose")
+fmt_p <- function(p) ifelse(is.na(p), "NE", ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
+fmt_ci <- function(est, lo, hi, d = 2) {
+  f <- function(x) ifelse(is.na(x), "NE", formatC(x, format = "f", digits = d))
+  paste0(f(est), " (", f(lo), ", ", f(hi), ")")
+}
+read_adam <- function(name) {
+  read_xpt(file.path("data/adam", paste0(name, ".xpt"))) %>%
+    mutate(across(where(is.character), ~ na_if(.x, "")))
+}
+adsl     <- read_adam("adsl")
+adae     <- read_adam("adae")
+adqsadas <- read_adam("adqsadas")
+
+# Week 24, LOCF, efficacy population: the analysis set of Table 4.
+wk24 <- adqsadas %>%
+  filter(PARAMCD == "ACTOT", EFFFL == "Y", AVISITN == 24, ANL01FL == "Y") %>%
+  mutate(TRTP   = factor(TRTP, levels = trt_levels),
+         AGEGR1 = factor(AGEGR1, levels = c("<65", "65-80", ">80")),
+         SEX    = factor(SEX, levels = c("F", "M")),
+         BASEGR = factor(ifelse(BASE <= 21, "<= 21", "> 21"), levels = c("<= 21", "> 21")))
+stopifnot(nrow(wk24) == n_distinct(wk24$USUBJID), !anyNA(wk24$CHG))
+
+scale_range <- 70                     # ADAS-Cog(11) runs from 0 to 70
+threshold   <- 0.15 * scale_range     # 15% of the scale range: 10.5 points
+```
+
+## What IQWiG asks of a scale
+
+ADAS-Cog(11) measures cognition from 0 to 70 points. Higher scores are worse.
+A rater scores tasks that the patient performs, so it is not a
+patient-reported outcome. IQWiG's rules for responder thresholds below apply
+to scales in general.
+The endpoint is the change from baseline to Week 24, with missing values
+carried forward (LOCF), as in the primary analysis.
+
+A mean difference of 1 point on a 70-point scale is hard to judge. IQWiG's
+General Methods (version 7.0, section 9.3.3) therefore set two rules.
+
+- **Responder analysis.** A response threshold of at least 15% of the scale
+  range is accepted without further checks if it was fixed in advance. If
+  it was not, an analysis with a threshold of exactly 15%, defined after
+  the fact, can be used. When a suitable responder analysis exists, it is
+  preferred.
+- **Standardised mean difference.** Otherwise the continuous data are
+  summarised as Hedges' g. The effect counts as at least small only if its
+  confidence interval lies completely beyond the irrelevance threshold of
+  0.2.
+
+For ADAS-Cog(11), 15% of the range is `r threshold` points. The pilot did
+not fix a responder threshold, so the analysis below uses exactly 15%, as
+the second route allows.
+
+## Mean difference and Hedges' g
+
+Hedges' g divides the mean difference by the pooled standard deviation. It
+then multiplies by a small-sample correction J, which is slightly below 1.
+The code computes g by hand and with `metafor::escalc(measure = "SMD")`.
+
+```{r smd}
+pbo <- wk24$CHG[wk24$TRTP == "Placebo"]
+smd_tab <- lapply(trt_levels[-1], function(arm) {
+  act <- wk24$CHG[wk24$TRTP == arm]
+  g   <- hedges_g_hand(act, pbo)
+  es  <- escalc("SMD", m1i = mean(act), sd1i = sd(act), n1i = length(act),
+                m2i = mean(pbo), sd2i = sd(pbo), n2i = length(pbo))
+  data.frame(Comparison = paste(arm, "vs placebo"),
+             `N (active / placebo)` = paste(length(act), "/", length(pbo)),
+             `Mean change (active / placebo)` = sprintf("%.2f / %.2f", mean(act), mean(pbo)),
+             `Hedges' g (95% CI)` = fmt_ci(g$g, g$lower, g$upper),
+             `Hand - escalc` = signif(g$g - es$yi, 2),
+             `CI entirely below -0.2` = ifelse(g$upper < -0.2, "yes", "no"),
+             check.names = FALSE)
+})
+bind_rows(smd_tab)
+g_hd <- hedges_g_hand(wk24$CHG[wk24$TRTP == "Xanomeline High Dose"], pbo)
+```
+
+A negative g favours xanomeline, because a lower change means less decline.
+For the high dose g = `r sprintf("%.2f", g_hd$g)`, 95% CI
+`r sprintf("%.2f", g_hd$lower)` to `r sprintf("%.2f", g_hd$upper)`. The
+interval includes 0 and does not lie completely below -0.2. By IQWiG's rule
+the effect cannot be called even small with sufficient certainty.
+
+## Responder analysis at 15% of the scale range
+
+Two responder definitions follow from the threshold of `r threshold` points:
+improvement (a fall of at least `r threshold` points) and deterioration (a
+rise of at least `r threshold` points). In Alzheimer's disease the aim of
+treatment is usually to slow decline, so deterioration is the more
+informative of the two.
+
+```{r responders}
+resp <- wk24 %>%
+  mutate(IMPROVE = CHG <= -threshold, WORSEN = CHG >= threshold)
+
+resp_labels <- c(IMPROVE = "Improvement >= 10.5 points",
+                 WORSEN  = "Deterioration >= 10.5 points")
+
+resp_tab <- bind_rows(lapply(names(resp_labels), function(v) {
+  cnt <- resp %>% group_by(TRTP) %>% summarise(n = sum(.data[[v]]), N = n(), .groups = "drop")
+  p0  <- cnt %>% filter(TRTP == "Placebo")
+  bind_rows(lapply(trt_levels[-1], function(arm) {
+    a  <- cnt %>% filter(TRTP == arm)
+    e  <- effect_2x2_hand(a$n, a$N, p0$n, p0$N)
+    ok <- a$n > 0 && p0$n > 0        # a ratio needs events in both arms
+    data.frame(Responder = resp_labels[[v]], Comparison = paste(arm, "vs placebo"),
+               `Active, n/N` = paste0(a$n, "/", a$N), `Placebo, n/N` = paste0(p0$n, "/", p0$N),
+               `RR (95% CI)` = if (ok) fmt_ci(e$estimate[1], e$lower[1], e$upper[1]) else "NE",
+               `RD (95% CI)` = fmt_ci(e$estimate[3], e$lower[3], e$upper[3]),
+               check.names = FALSE)
+  }))
+}))
+resp_tab
+```
+
+Almost nobody improved by 10.5 points in 24 weeks, so the improvement
+responder carries no information. Fewer high-dose patients deteriorated by
+10.5 points than placebo patients, but the interval for the risk ratio is
+wide and includes 1. Missing Week 24 values were carried forward from
+earlier visits. An assessor would question LOCF, because it assumes no
+further decline after a patient leaves, and would ask for a sensitivity
+analysis such as the MMRM in the efficacy report.
+
+## One table in dossier layout
+
+A dossier summarises each endpoint in one row: patients, events, effect with
+its interval, p-value and the result of the subgroup interaction tests. The
+table below does this for the high dose against placebo. It follows the
+order of a benefit assessment: mortality, morbidity, then side effects.
+
+Effect measures: hazard ratio from a Cox model for time to event, risk ratio
+for responders and mean difference for the continuous score. The mean
+difference comes from the ANCOVA of the primary analysis, with treatment,
+pooled site and baseline score. The interaction column gives the smallest
+p-value of the three pre-specified subgroup tests (age group, sex, baseline
+ADAS-Cog) and names its subgroup.
+
+```{r dossier-table}
+subgroup_vars <- c(AGEGR1 = "Age group", SEX = "Sex", BASEGR = "Baseline ADAS-Cog(11)")
+active <- "Xanomeline High Dose"
+
+# Smallest interaction p-value across the subgroups for any model family.
+min_interaction <- function(fit_main, fit_int) {
+  p <- sapply(names(subgroup_vars), function(v) {
+    m0 <- fit_main(v)
+    m1 <- fit_int(v)
+    if (inherits(m0, "lm") && !inherits(m0, "glm")) anova(m0, m1)[2, "Pr(>F)"]
+    else anova(m0, m1, test = "Chisq")[2, "Pr(>Chi)"]
+  })
+  paste0(fmt_p(min(p)), " (", tolower(subgroup_vars[[names(which.min(p))]]), ")")
+}
+
+# Time-to-event rows from the adverse-event sets.
+ae_tte <- derive_ae_tte(adsl, adae) %>%
+  left_join(adqsadas %>% filter(PARAMCD == "ACTOT", ABLFL == "Y") %>% distinct(USUBJID, BASE),
+            by = "USUBJID") %>%
+  mutate(AGEGR1 = factor(AGEGR1, levels = c("<65", "65-80", ">80")),
+         SEX    = factor(SEX, levels = c("F", "M")),
+         BASEGR = factor(ifelse(BASE <= 21, "<= 21", "> 21"), levels = c("<= 21", "> 21")))
+
+tte_row <- function(pc, label) {
+  d  <- ae_tte %>% filter(PARAMCD == pc, TRTA %in% c("Placebo", active)) %>%
+    mutate(ACT = as.integer(TRTA == active), EVENT = 1 - CNSR)
+  arm <- function(x) {
+    km <- summary(survfit(Surv(AVAL, EVENT) ~ 1, data = x))$table
+    med <- unname(km["median"])
+    c(N = nrow(x), events = sprintf("%d (%.1f%%)", sum(x$EVENT), 100 * mean(x$EVENT)),
+      median = if (is.na(med)) "NE" else sprintf("%.0f", med))
+  }
+  a <- arm(filter(d, ACT == 1))
+  p <- arm(filter(d, ACT == 0))
+  if (sum(d$EVENT[d$ACT == 0]) == 0) {
+    eff <- "NE"; pv <- "NE"; pint <- "NE"
+  } else {
+    cx  <- summary(coxph(Surv(AVAL, EVENT) ~ ACT, data = d))
+    eff <- fmt_ci(cx$conf.int[1, 1], cx$conf.int[1, 3], cx$conf.int[1, 4])
+    pv  <- fmt_p(cx$coefficients[1, "Pr(>|z|)"])
+    sg  <- hta_subgroups(d, pc, active, subgroups = subgroup_vars)
+    i   <- which.min(sg$table$p_int)
+    pint <- paste0(fmt_p(sg$table$p_int[i]), " (", tolower(sg$table$variable[i]), ")")
+  }
+  data.frame(Endpoint = label, `N HD` = a[["N"]], `Events HD` = a[["events"]],
+             `Median HD (days)` = a[["median"]], `N PBO` = p[["N"]], `Events PBO` = p[["events"]],
+             `Median PBO (days)` = p[["median"]], Measure = "HR", `Effect (95% CI)` = eff,
+             p = pv, `Interaction p (subgroup)` = pint, check.names = FALSE)
+}
+
+# Mortality: deaths during the study, counts only.
+dth <- adsl %>% filter(SAFFL == "Y", TRT01A %in% c("Placebo", active)) %>%
+  group_by(TRT01A) %>% summarise(n = sum(DTHFL %in% "Y"), N = n(), .groups = "drop")
+mort_row <- data.frame(
+  Endpoint = "All-cause death", `N HD` = dth$N[dth$TRT01A == active],
+  `Events HD` = as.character(dth$n[dth$TRT01A == active]), `Median HD (days)` = "",
+  `N PBO` = dth$N[dth$TRT01A == "Placebo"], `Events PBO` = as.character(dth$n[dth$TRT01A == "Placebo"]),
+  `Median PBO (days)` = "", Measure = "", `Effect (95% CI)` = "too few events",
+  p = "", `Interaction p (subgroup)` = "", check.names = FALSE)
+
+# Morbidity: ADAS-Cog(11). ANCOVA as in Table 4, all three arms in one model.
+anc  <- lm(CHG ~ TRTP + SITEGR1 + BASE, data = wk24)
+ci   <- confint(anc)["TRTPXanomeline High Dose", ]
+est  <- coef(anc)[["TRTPXanomeline High Dose"]]
+t4   <- readr::read_csv("outputs/t4_adascog_wk24_ancova.csv", show_col_types = FALSE)
+stopifnot(t4$V3[grepl("^LS mean difference", t4$row_name)] ==
+            fmt_ci(est, ci[1], ci[2], d = 1))   # same as the primary analysis
+hdp  <- wk24 %>% filter(TRTP %in% c("Placebo", active)) %>% droplevels()
+cont_pint <- min_interaction(
+  function(v) lm(as.formula(paste("CHG ~ TRTP + SITEGR1 + BASE +", v)), data = hdp),
+  function(v) lm(as.formula(paste("CHG ~ TRTP * ", v, "+ SITEGR1 + BASE")), data = hdp))
+mean_sd <- function(x) sprintf("%.2f (%.2f)", mean(x), sd(x))
+x_hd  <- wk24$CHG[wk24$TRTP == active]
+worse <- effect_2x2_hand(sum(x_hd >= threshold), length(x_hd), sum(pbo >= threshold), length(pbo))
+
+morb_rows <- data.frame(
+  Endpoint = c("ADAS-Cog(11) change to Week 24, mean (SD)", "ADAS-Cog(11), Hedges' g",
+               "Deterioration >= 10.5 points (15% of range)"),
+  `N HD` = c(length(x_hd), length(x_hd), length(x_hd)),
+  `Events HD` = c(mean_sd(x_hd), "", sprintf("%d (%.1f%%)", sum(x_hd >= threshold), 100 * mean(x_hd >= threshold))),
+  `Median HD (days)` = "",
+  `N PBO` = c(length(pbo), length(pbo), length(pbo)),
+  `Events PBO` = c(mean_sd(pbo), "", sprintf("%d (%.1f%%)", sum(pbo >= threshold), 100 * mean(pbo >= threshold))),
+  `Median PBO (days)` = "",
+  Measure = c("LS mean difference", "g", "RR"),
+  `Effect (95% CI)` = c(fmt_ci(est, ci[1], ci[2]), fmt_ci(g_hd$g, g_hd$lower, g_hd$upper),
+                        fmt_ci(worse$estimate[1], worse$lower[1], worse$upper[1])),
+  p = c(fmt_p(summary(anc)$coefficients["TRTPXanomeline High Dose", "Pr(>|t|)"]), "",
+        fmt_p(2 * pnorm(-abs(worse$yi[1] / sqrt(worse$vi[1]))))),   # Wald test on log RR
+  `Interaction p (subgroup)` = c(cont_pint, "", min_interaction(
+    function(v) glm(as.formula(paste("I(CHG >= threshold) ~ TRTP +", v)), family = binomial, data = hdp),
+    function(v) glm(as.formula(paste("I(CHG >= threshold) ~ TRTP *", v)), family = binomial, data = hdp))),
+  check.names = FALSE)
+
+side_rows <- bind_rows(
+  tte_row("TTAE", "Any TEAE"),
+  tte_row("TTSAE", "Serious TEAE"),
+  tte_row("TTSEVAE", "Severe TEAE"),
+  tte_row("TTDCAE", "Discontinuation due to AE"),
+  tte_row("TTDE", "Dermatologic TEAE")
+)
+
+section <- function(title) {
+  data.frame(Endpoint = paste0("**", title, "**"), `N HD` = "", `Events HD` = "",
+             `Median HD (days)` = "", `N PBO` = "", `Events PBO` = "", `Median PBO (days)` = "",
+             Measure = "", `Effect (95% CI)` = "", p = "", `Interaction p (subgroup)` = "",
+             check.names = FALSE)
+}
+as_chr  <- function(d) mutate(d, across(everything(), as.character))
+dossier <- bind_rows(lapply(list(section("Mortality"), mort_row,
+                                 section("Morbidity"), morb_rows,
+                                 section("Side effects"), side_rows), as_chr))
+knitr::kable(dossier, align = "lrrrrrrlrrr")
+```
+
+Table notes: HD = Xanomeline High Dose, PBO = placebo, NE = not estimable.
+Side effects: safety population, actual treatment, time to first event,
+hazard ratio and Wald p-value from a Cox model with treatment only. Values
+above 1 mean more events on xanomeline. Morbidity: efficacy population,
+planned treatment, Week 24 with LOCF. The mean difference reproduces
+Table 4 of this repository, which the code checks. Interaction tests:
+likelihood-ratio tests for time to event and responders, F-tests for the
+continuous score.
+
+Read as a whole, the table shows no clear benefit on cognition and a clear
+harm on skin events and on discontinuations due to adverse events. In an
+assessment that pattern would not support an added benefit. This is a
+self-study on public pilot data, so the reading illustrates the method and
+says nothing about xanomeline.

@@ -9,15 +9,21 @@ Study      : CDISCPILOT01 (public CDISC pilot test data)
 Purpose    : Time to first dermatologic adverse event the way an HTA dossier
              asks for it: Kaplan-Meier, log-rank, Cox (unstratified and
              stratified), proportional-hazards checks, RMST, subgroup
-             analyses with interaction tests, and effect measures for the
-             binary endpoint "at least one TEAE"
+             analyses with interaction tests, effect measures for the
+             binary endpoint "at least one TEAE", death as a competing
+             event, and the standard adverse-event sets of a dossier
 Inputs     : data/adam/adsl.xpt, adae.xpt, adtte.xpt, adqsadas.xpt
              (committed transport files)
              R/hta_methods.R (hand calculations)
+             R/hta_subgroups.R (subgroup table and forest plot)
+             R/hta_ae_tte.R (time to first event per adverse-event set)
 Outputs    : hta/_site/01-tte-safety.html
 Author     : Ignacio Garcia Ribelles
 Created    : 2026-11-24
 Change log : 2026-11-24  IGR  Initial version
+             2026-11-25  IGR  Subgroups through hta_subgroups(), competing
+                              risk, standard adverse-event sets, IQWiG
+                              references checked against General Methods 7.0
 Notes      : Fixed before any model was fitted. Comparison for subgroups:
              Xanomeline High Dose vs placebo. Stratification factor: SITEGR1.
              Subgroups: AGEGR1, SEX and baseline ADAS-Cog(11) up to 21 vs
@@ -35,6 +41,8 @@ library(metafor)
 library(ggplot2)
 
 source("R/hta_methods.R")
+source("R/hta_subgroups.R")
+source("R/hta_ae_tte.R")
 
 trt_levels <- c("Placebo", "Xanomeline Low Dose", "Xanomeline High Dose")
 # Okabe-Ito, as in programs/92_figures.R
@@ -325,6 +333,44 @@ bind_rows(rmst_tab)
 Over the first 24 weeks, high-dose patients were free of dermatologic events
 for about 79 fewer days on average than placebo patients.
 
+## Death as a competing event
+
+A patient who dies before any skin event can no longer have one. The
+Kaplan-Meier analysis above censors such a patient as if a skin event were
+still possible later. IQWiG's General Methods (section 9.3.12) note that,
+for non-fatal events, death is always a competing event. The usual
+Kaplan-Meier curve then overestimates the absolute risk. They ask for the
+Aalen-Johansen estimator of the cumulative incidence function instead. The
+Cox model for the cause-specific hazard, as above, remains a correct
+analysis of the hazard ratio.
+
+```{r competing}
+deaths <- adsl %>% filter(DTHFL == "Y") %>% select(USUBJID, DTHDT)
+cr <- tte %>%
+  left_join(deaths, by = "USUBJID") %>%
+  mutate(STATUS = factor(case_when(EVENT == 1 ~ "skin event",
+                                   !is.na(DTHDT) & DTHDT <= ADT ~ "death",
+                                   TRUE ~ "censored"),
+                         levels = c("censored", "skin event", "death")))
+
+aj <- survfit(Surv(AVAL, STATUS) ~ TRTA, data = cr)   # Aalen-Johansen
+aj168 <- summary(aj, times = 168, extend = TRUE)
+km168 <- summary(km, times = 168, extend = TRUE)
+
+data.frame(
+  Arm = trt_levels,
+  `Deaths before a skin event` = as.integer(table(cr$TRTA[cr$STATUS == "death"])[trt_levels]),
+  `1 - Kaplan-Meier at day 168` = sprintf("%.1f%%", 100 * (1 - km168$surv)),
+  `Cumulative incidence (Aalen-Johansen) at day 168` =
+    sprintf("%.1f%%", 100 * aj168$pstate[, which(aj$states == "skin event")]),
+  check.names = FALSE
+)
+```
+
+Only `r sum(cr$STATUS == "death")` patients died before a skin event, so the
+two estimates barely differ here. In an oncology trial with high mortality
+the gap can be large, and the dossier would need the Aalen-Johansen curves.
+
 ## Subgroup analyses
 
 Three subgroup variables were fixed in advance: age group (`AGEGR1`), sex,
@@ -338,62 +384,35 @@ levels? The test of treatment-by-subgroup interaction answers it. It is a
 likelihood-ratio test comparing a model with treatment and subgroup against
 one that adds their interaction.
 
-```{r subgroups}
-hd <- vs_placebo_data("Xanomeline High Dose")
+`R/hta_subgroups.R` holds the analysis as one reusable function. A single
+call returns the table and the forest plot for any ADTTE parameter. The
+same function produces the subgroup results for the other adverse-event
+sets below.
 
+```{r subgroups}
 subgroup_vars <- c(AGEGR1 = "Age group", SEX = "Sex", BASEGR = "Baseline ADAS-Cog(11)")
 
-sub_res <- lapply(names(subgroup_vars), function(v) {
-  f_main <- as.formula(paste("Surv(AVAL, EVENT) ~ TRTA +", v))
-  f_int  <- as.formula(paste("Surv(AVAL, EVENT) ~ TRTA *", v))
-  p_int  <- anova(coxph(f_main, data = hd), coxph(f_int, data = hd))[2, "Pr(>|Chi|)"]
-  lv <- levels(hd[[v]])
-  bind_rows(lapply(lv, function(l) {
-    d  <- hd[hd[[v]] == l, ]
-    ci <- summary(coxph(Surv(AVAL, EVENT) ~ TRTA, data = d))$conf.int
-    data.frame(Variable = subgroup_vars[[v]], Level = l,
-               N = nrow(d),
-               `Events (HD / PBO)` = paste0(sum(d$EVENT[d$TRTA != "Placebo"]), " / ",
-                                            sum(d$EVENT[d$TRTA == "Placebo"])),
-               hr = ci[1, 1], lo = ci[1, 3], hi = ci[1, 4],
-               p_int = p_int, check.names = FALSE)
-  }))
-})
-sub_res <- bind_rows(sub_res)
-overall <- summary(coxph(Surv(AVAL, EVENT) ~ TRTA, data = hd))$conf.int
+sg <- hta_subgroups(tte, paramcd = "TTDE", active = "Xanomeline High Dose",
+                    subgroups = subgroup_vars,
+                    ref_line_label = "Values above 1 mean more events on xanomeline.")
+sub_res <- sg$table
 
 sub_res %>%
-  mutate(`HR (95% CI)` = fmt_ci(hr, lo, hi),
-         `Interaction p` = ifelse(duplicated(Variable), "", fmt_p(p_int))) %>%
-  select(Variable, Level, N, `Events (HD / PBO)`, `HR (95% CI)`, `Interaction p`)
+  mutate(`Events (HD / PBO)` = paste(events_active, "/", events_control),
+         `HR (95% CI)` = fmt_ci(hr, lo, hi),
+         `Interaction p` = ifelse(duplicated(variable), "", fmt_p(p_int)),
+         `IQWiG size rule met` = ifelse(iqwig_size_ok, "yes", "no")) %>%
+  select(Variable = variable, Level = level, N = n, `Events (HD / PBO)`,
+         `HR (95% CI)`, `Interaction p`, `IQWiG size rule met`)
 ```
 
 ```{r forest, fig.height = 4.5}
-forest_dat <- bind_rows(
-  data.frame(Variable = "All patients", Level = "", hr = overall[1, 1],
-             lo = overall[1, 3], hi = overall[1, 4], p_int = NA),
-  sub_res %>% select(Variable, Level, hr, lo, hi, p_int)
-) %>%
-  mutate(label = ifelse(Level == "", Variable, paste0(Variable, ": ", Level)),
-         label = factor(label, levels = rev(label)))
-
-ggplot(forest_dat, aes(hr, label)) +
-  geom_vline(xintercept = 1, colour = "grey40") +
-  geom_vline(xintercept = overall[1, 1], linetype = "dashed", colour = "#D55E00") +
-  geom_errorbarh(aes(xmin = lo, xmax = hi), height = 0.2) +
-  geom_point(aes(shape = Level == ""), size = 2.5) +
-  scale_shape_manual(values = c(15, 18), guide = "none") +
-  scale_x_log10() +
-  labs(x = "Hazard ratio, high dose vs placebo (log scale)", y = NULL,
-       caption = "Dashed line: overall hazard ratio. Values above 1 mean more events on xanomeline.") +
-  theme_minimal(base_size = 11) +
-  theme(panel.grid.minor = element_blank(),
-        plot.caption = element_text(hjust = 0, colour = "grey40"))
+sg$plot + labs(title = NULL)
 ```
 
 None of the interaction tests is significant at the 5% level. The smallest
 p-value is `r fmt_p(min(sub_res$p_int))`, for
-`r tolower(sub_res$Variable[which.min(sub_res$p_int)])`. All subgroup intervals
+`r tolower(sub_res$variable[which.min(sub_res$p_int)])`. All subgroup intervals
 include the overall estimate.
 
 **Multiplicity.** Three subgroup variables give three interaction tests and
@@ -404,6 +423,13 @@ quite likely even when the effect is the same in everyone.
 subgroup and a non-significant effect in another does not show that the
 effects differ. The second subgroup may simply be smaller. Only the
 interaction test compares the subgroups with each other.
+
+**Size rule.** IQWiG's General Methods (version 7.0, section 9.3.9) state
+that subgroup analyses are, as a rule, only carried out if each subgroup
+has at least 10 people and, for binary or time-to-event data, at least 10
+events occurred in one of the subgroups. An interaction test significant at
+α = 0.05 is read as effect modification. The last column of the table
+applies the size rule.
 
 ## Binary endpoint: at least one adverse event
 
@@ -452,17 +478,77 @@ the risk ratio. It should not be read as "seven times the risk". The risk
 difference of about 20 percentage points is the easiest to read. It also
 lets one compute a number needed to harm of about 5.
 
+## The standard adverse-event sets
+
+A dossier reports four standard sets of adverse events: any adverse event,
+serious ones, severe ones and discontinuations due to adverse events.
+`R/hta_ae_tte.R` derives the time to the first event of each set with
+`{admiral}`, by the same rules as ADTTE. Its dermatologic parameter
+reproduces the committed ADTTE exactly, which the tests check. Two
+limitations of the pilot data matter here. Severity is recorded as mild,
+moderate or severe, not as CTCAE grades. ADSL holds the reason for leaving
+the study, not a separate reason for stopping treatment.
+
+```{r ae-sets}
+ae_tte <- derive_ae_tte(adsl, adae) %>%
+  left_join(base_adas, by = "USUBJID") %>%
+  mutate(TRTA   = factor(TRTA, levels = trt_levels),
+         AGEGR1 = factor(AGEGR1, levels = c("<65", "65-80", ">80")),
+         SEX    = factor(SEX, levels = c("F", "M")),
+         BASEGR = factor(ifelse(BASE <= 21, "<= 21", "> 21"), levels = c("<= 21", "> 21")))
+
+ae_sets <- c(TTAE = "Any TEAE", TTSAE = "Serious TEAE", TTSEVAE = "Severe TEAE",
+             TTDCAE = "Discontinuation due to AE", TTDE = "Dermatologic TEAE")
+
+ae_rows <- lapply(names(ae_sets), function(pc) {
+  d   <- ae_tte %>% filter(PARAMCD == pc)
+  cnt <- d %>% group_by(TRTA) %>% summarise(n = sum(CNSR == 0), N = n(), .groups = "drop")
+  hd  <- cnt %>% filter(TRTA == "Xanomeline High Dose")
+  pb  <- cnt %>% filter(TRTA == "Placebo")
+  sgr <- hta_subgroups(d, pc, "Xanomeline High Dose", subgroups = subgroup_vars)
+  enough <- min(hd$n, pb$n) > 0
+  rr  <- if (enough) effect_2x2_hand(hd$n, hd$N, pb$n, pb$N)[1, ] else NULL
+  data.frame(
+    `Adverse-event set` = ae_sets[[pc]],
+    `Placebo, n/N` = paste0(pb$n, "/", pb$N),
+    `Low dose, n/N` = with(filter(cnt, TRTA == "Xanomeline Low Dose"), paste0(n, "/", N)),
+    `High dose, n/N` = paste0(hd$n, "/", hd$N),
+    `HR high vs placebo (95% CI)` = if (enough) fmt_ci(sgr$overall$hr, sgr$overall$lo, sgr$overall$hi) else "NE",
+    `RR high vs placebo (95% CI)` = if (enough) fmt_ci(rr$estimate, rr$lower, rr$upper) else "NE",
+    `Smallest interaction p` = if (enough) fmt_p(min(sgr$table$p_int)) else "NE",
+    check.names = FALSE
+  )
+})
+bind_rows(ae_rows)
+```
+
+The serious set has only `r sum(ae_tte$PARAMCD == "TTSAE" & ae_tte$CNSR == 0)`
+events across all arms, none on placebo. No hazard ratio or risk ratio can
+be estimated, and a dossier would report the counts alone. Discontinuation
+due to an adverse event is the clearest harm signal after the skin events.
+The hazard ratio and the risk ratio differ because they answer different
+questions. The hazard ratio uses when each event happened. The risk ratio
+uses only whether it happened by the end of the study.
+
 ## What a German dossier would ask here
 
 In the German benefit assessment (AMNOG), the company submits a dossier and
-IQWiG assesses it for the Federal Joint Committee (G-BA). For a safety
-endpoint like this one, the dossier would usually be asked for the
+IQWiG assesses it for the Federal Joint Committee (G-BA). The points below
+come from IQWiG's General Methods, version 7.0 of 19 September 2023. For a
+safety endpoint like this one, the dossier would usually be asked for the
 following.
 
 - **Adverse events as time to event.** Arms are often observed for different
-  lengths of time, for example because patients stop treatment early. A
-  proportion then compares unequal windows. A Kaplan-Meier analysis with a
-  hazard ratio deals with that.
+  lengths of time, for example because patients stop treatment early. For
+  group comparisons with different mean observation periods, IQWiG requires
+  adequate survival time methods (section 9.3.12).
+- **Death as a competing event.** For non-fatal events, the Kaplan-Meier
+  curve overestimates the absolute risk. IQWiG asks for the Aalen-Johansen
+  cumulative incidence function, or a cause-specific Cox model with a model
+  for the competing event (section 9.3.12).
+- **Complete follow-up.** If events stop being recorded when treatment
+  stops, censoring becomes informative. IQWiG asks for adverse events to be
+  collected after discontinuation too (section 9.3.12).
 - **Effect measures with 95% confidence intervals.** Hazard ratios for time
   to event, and relative risks or odds ratios with risk differences for
   binary endpoints. Each with the number of patients and events per arm.
@@ -471,8 +557,9 @@ following.
   to adverse events. Specific events by system organ class and preferred
   term are added where they matter.
 - **Subgroup analyses with interaction tests.** Usually age, sex, region or
-  centre and disease severity, fixed in advance. The interaction test, not a
-  p-value within one subgroup, decides whether an effect differs. Results
-  are shown only for subgroups large enough to support them.
+  centre and disease severity, fixed in advance. An interaction test
+  significant at α = 0.05 shows effect modification. Subgroups are analysed
+  only if each has at least 10 people and one has at least 10 events
+  (section 9.3.9).
 - **Methods fixed before the data are seen**, with sensitivity analyses
   where an assumption such as proportional hazards is in doubt.

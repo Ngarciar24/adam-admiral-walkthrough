@@ -10,6 +10,8 @@ Purpose    : Landing page of the HTA part: scope, data sources, how the
 Author     : Ignacio Garcia Ribelles
 Created    : 2026-11-24
 Change log : 2026-11-24  IGR  Initial version
+             2026-11-25  IGR  Page 1b, hazard-ratio meta-analysis, shared
+                              functions
 -->
 
 This part takes the ADaM datasets built in this repository one step further.
@@ -24,13 +26,23 @@ submission, and the results support no claim about xanomeline.
 ## Chapters
 
 1. **Time-to-event and safety analyses.** Kaplan-Meier, Cox models,
-   proportional hazards, restricted mean survival time, subgroup analyses
-   and effect measures for a binary safety endpoint. Data: ADSL, ADAE and
-   ADTTE of the CDISC pilot study CDISCPILOT01, read from the committed
-   transport files in `data/adam/`.
+   proportional hazards, restricted mean survival time, death as a
+   competing event, subgroup analyses, effect measures for a binary safety
+   endpoint and the standard adverse-event sets of a dossier. Data: ADSL,
+   ADAE and ADTTE of the CDISC pilot study CDISCPILOT01, read from the
+   committed transport files in `data/adam/`.
+
+   **1b. Efficacy as an assessment body reads it.** Hedges' g against
+   IQWiG's irrelevance threshold, a responder analysis at 15% of the scale
+   range, and one summary table in dossier layout.
+
+   **1c. Parametric survival and extrapolation.** Six standard models fitted
+   to 3 years of breast cancer follow-up, extrapolated and checked against
+   the later data, following NICE DSU Technical Support Document 14.
 2. **Meta-analysis.** Fixed-effect and random-effects models, heterogeneity,
-   forest and funnel plots, leave-one-out. Data: published trial results
-   shipped with the `{metadat}` package.
+   forest and funnel plots, leave-one-out, and the pooling of hazard ratios
+   in oncology the way IQWiG runs it. Data: published trial results shipped
+   with the `{metadat}` package.
 3. **Indirect treatment comparison.** The Bucher method and a small network
    meta-analysis. Data: a published network shipped with `{netmeta}`.
    A text-only page on population-adjusted methods closes the chapter.
@@ -43,6 +55,14 @@ Every quantity that a chapter computes by hand is also computed with an
 established package. A `testthat` test then checks that the two agree to
 within 1e-8. The hand calculations live in `R/hta_methods.R`. The chapters
 and the tests both use them, so the page and the test cannot drift apart.
+
+Two reusable functions sit next to them. `R/hta_subgroups.R` returns the
+subgroup table and forest plot for any ADTTE parameter, and its results
+are tested against `{tern}`. `R/hta_ae_tte.R` derives the time to first
+event for each standard adverse-event set with `{admiral}`.
+
+Statements about IQWiG's methods quote its General Methods, version 7.0 of
+19 September 2023, with section numbers.
 
 No data are downloaded when this part is built. The CDISC pilot data come
 from the transport files in the repository. The trial results come from

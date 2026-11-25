@@ -11,6 +11,7 @@ Purpose    : Text-only page on population-adjusted indirect comparisons
 Author     : Ignacio Garcia Ribelles
 Created    : 2026-11-24
 Change log : 2026-11-24  IGR  Initial version
+             2026-11-25  IGR  IQWiG position quoted from General Methods 7.0
 Notes      : No code. Main sources: NICE DSU TSD 18 (2016) and the EU HTA
              Coordination Group guidelines on direct and indirect
              comparisons (2024).
@@ -92,9 +93,13 @@ estimate how large it could be.
   conditional estimate from one trial with a marginal one from another can
   mislead.
 - **Unanchored comparisons are observational in nature.** They lose the
-  protection of randomisation. German assessment practice, for example,
-  generally accepts conclusions from non-randomised comparisons only when the
-  effect is so large that bias alone cannot explain it.
+  protection of randomisation. IQWiG's General Methods (version 7.0, section
+  9.3.8) accept only adjusted indirect comparisons through adequate common
+  comparators, such as the Bucher method and network meta-analysis. They
+  reject comparisons of single arms from different studies, and methods that
+  bridge a missing common comparator with strong assumptions that cannot be
+  tested. Conclusions from accepted indirect comparisons carry a lower
+  certainty of results.
 
 ## What the guidance documents say, in brief
 
@@ -125,6 +130,8 @@ still rest on the same kind of assumptions about effect modifiers.
   trials. *Journal of Clinical Epidemiology* 1997, 50(6), 683-691.
 - Caro JJ, Ishak KJ. No head-to-head trial? Simulate the missing arms.
   *PharmacoEconomics* 2010, 28(10), 957-967.
+- Institute for Quality and Efficiency in Health Care (IQWiG). General
+  Methods, version 7.0 of 19 September 2023. Cologne: IQWiG, 2023.
 - Member State Coordination Group on Health Technology Assessment.
   Methodological guideline for quantitative evidence synthesis: direct and
   indirect comparisons. Adopted 8 March 2024.

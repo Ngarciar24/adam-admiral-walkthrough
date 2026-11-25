@@ -99,3 +99,50 @@ test_that("rma.mv with a random intercept per trial reproduces rma (REML)", {
   expect_same(mv$beta, re$beta, tolerance = 1e-6)
   expect_same(mv$se, re$se, tolerance = 1e-6)
 })
+
+# --- Hazard ratios: MACH-NC (metadat::dat.pignon2000, Pignon et al. 2000) ---
+
+pig <- metadat::dat.pignon2000
+hr  <- loghr_from_ome(pig$OmE, pig$V)
+
+test_that("the hazard-ratio example has 65 trials in three timing groups", {
+  expect_equal(nrow(pig), 65L)
+  expect_equal(as.vector(table(pig$grp)), c(8L, 31L, 26L))
+})
+
+test_that("log HR from O - E and V, and SE recovered from a 95% CI, agree", {
+  expect_same(hr$yi, pig$OmE / pig$V)
+  expect_same(hr$vi, 1 / pig$V)
+  z    <- qnorm(0.975)
+  back <- loghr_from_ci(exp(hr$yi), exp(hr$yi - z * sqrt(hr$vi)), exp(hr$yi + z * sqrt(hr$vi)))
+  expect_same(back$yi, hr$yi)
+  expect_same(back$se, sqrt(hr$vi))
+})
+
+test_that("fixed-effect pooled log HR by hand equals rma", {
+  fe  <- fe_hand(hr$yi, hr$vi)
+  pkg <- rma(hr$yi, hr$vi, method = "FE")
+  expect_same(c(fe$est, fe$se, fe$Q), c(pkg$beta, pkg$se, pkg$QE))
+})
+
+test_that("Paule-Mandel tau^2 by hand equals rma(method = 'PM')", {
+  pkg <- rma(hr$yi, hr$vi, method = "PM", control = list(tol = 1e-14))
+  expect_same(pm_tau2_hand(hr$yi, hr$vi), pkg$tau2)
+  expect_equal(pm_tau2_hand(c(0.1, 0.1, 0.1), c(0.01, 0.02, 0.03)), 0)   # no heterogeneity
+})
+
+test_that("Paule-Mandel with Knapp-Hartung by hand equals rma(test = 'knha')", {
+  pkg  <- rma(hr$yi, hr$vi, method = "PM", test = "knha", control = list(tol = 1e-14))
+  hand <- re_hand(hr$yi, hr$vi, pm_tau2_hand(hr$yi, hr$vi), knha = TRUE)
+  pred <- predict(pkg)
+  expect_same(c(hand$est, hand$se, hand$lower, hand$upper),
+              c(pkg$beta, pkg$se, pkg$ci.lb, pkg$ci.ub))
+  expect_same(c(hand$pi_lower, hand$pi_upper), c(pred$pi.lb, pred$pi.ub))
+})
+
+test_that("test for subgroup differences by hand equals the moderator test", {
+  qb  <- q_between_hand(hr$yi, hr$vi, pig$grp)
+  pkg <- rma(hr$yi, hr$vi, mods = ~ factor(pig$grp), method = "FE")
+  expect_same(c(qb$Q_between, qb$p), c(pkg$QM, pkg$QMp))
+  expect_equal(qb$df, 2)
+})

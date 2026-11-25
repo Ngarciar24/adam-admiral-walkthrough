@@ -12,9 +12,9 @@ ADaM datasets, define.xml and analysis outputs for the public CDISC pilot study 
 - **Transport files and define.xml.** Exports all five to SAS Transport v5 from one specification (`metadata/`). The same specification generates a Define-XML 2.1 `define.xml`, validated against the CDISC schema and against the transport files.
 - **Comparison with the pilot.** Compares every dataset with the published CDISC pilot ADaM datasets, variable by variable. Each difference must be explained in `metadata/pilot_differences.csv` or the run stops.
 - **Outputs.** Produces a demographics table, an ALT change-from-baseline table and figure, a time-to-event table with a Kaplan–Meier plot, and the primary efficacy ANCOVA.
-- **From ADaM to an HTA dossier.** A self-study extension in `hta/`, in three chapters. Chapter 1 analyses the ADaM data the way a health technology assessment asks for it: Kaplan–Meier, stratified Cox, proportional-hazards checks, restricted mean survival time, subgroup analyses with interaction tests, and risk ratio, odds ratio and risk difference. Chapter 2 is a meta-analysis of 13 published trials. Chapter 3 covers the Bucher indirect comparison, a network meta-analysis and population-adjusted methods. Each hand calculation is tested against an established R package.
+- **From ADaM to an HTA dossier.** A self-study extension in `hta/`, in three chapters. Chapter 1 analyses the ADaM data the way a health technology assessment asks for it: Kaplan–Meier, stratified Cox, proportional-hazards checks, restricted mean survival time, death as a competing event, subgroup analyses with interaction tests, risk ratio, odds ratio and risk difference, and the standard adverse-event sets. Page 1b reads the efficacy endpoint as IQWiG does (Hedges' g, a responder analysis at 15% of the scale range) and puts all endpoints in one table in dossier layout. Page 1c fits six parametric survival models, extrapolates them and checks the extrapolations against later follow-up. Chapter 2 is a meta-analysis of 13 vaccine trials and of 65 cancer trials pooled on the hazard-ratio scale. Chapter 3 covers the Bucher indirect comparison, a network meta-analysis and population-adjusted methods. Each hand calculation is tested against an established R package.
 - **Checks.**
-  - 329 `testthat` expectations: 225 on the derivations, including unit tests of the baseline rule on hand-built data, and 104 on the HTA part, including checks that every hand calculation agrees with `{survival}`, `{survRM2}`, `{metafor}` or `{netmeta}` to within 1e-8.
+  - 425 `testthat` expectations: 225 on the derivations, including unit tests of the baseline rule on hand-built data, and 200 on the HTA part, including checks that every hand calculation agrees with `{survival}`, `{survRM2}`, `{metafor}`, `{netmeta}` or `{flexsurv}` to within 1e-8, and that the subgroup function agrees with `{tern}`.
   - 71 ADaM conformance checks.
   - An independent Python re-derivation of the treatment-emergent flag and the time-to-event data.
 - **Reproducibility.** GitHub Actions rebuilds everything on every push, in a pinned `{renv}` environment.
@@ -82,11 +82,13 @@ quarto render hta   # writes hta/_site/
 
 | Chapter | Data | Methods |
 |---|---|---|
-| 1. Time-to-event and safety analyses | ADSL, ADAE, ADTTE, ADQSADAS of CDISCPILOT01 | Kaplan–Meier, log-rank, Cox (unstratified and stratified), Schoenfeld residuals, RMST, subgroups with interaction tests, RR/OR/RD |
-| 2. Meta-analysis | 13 BCG vaccine trials (Colditz et al. 1994, `metadat::dat.bcg`) | Inverse-variance and REML random effects with Hartung–Knapp, Q, I², τ², prediction interval, forest and funnel plots, leave-one-out, `rma.mv` as a mixed model |
+| 1. Time-to-event and safety analyses | ADSL, ADAE, ADTTE, ADQSADAS of CDISCPILOT01 | Kaplan–Meier, log-rank, Cox (unstratified and stratified), Schoenfeld residuals, RMST, Aalen–Johansen for death as a competing event, subgroups with interaction tests, RR/OR/RD, any, serious and severe AEs and discontinuations due to AEs |
+| 1b. Efficacy as an assessment body reads it | ADQSADAS, ADSL, ADAE | Hedges' g against IQWiG's irrelevance threshold of 0.2, responder analysis at 15% of the scale range, one summary table in dossier layout |
+| 1c. Parametric survival and extrapolation | 686 breast cancer patients (German Breast Cancer Study Group, `flexsurv::bc`) | Exponential, Weibull, Gompertz, log-logistic, log-normal and generalised gamma fitted to 3 years of follow-up, AIC and BIC, extrapolation checked against the later data, model hazards, following NICE DSU TSD 14 |
+| 2. Meta-analysis | 13 BCG vaccine trials (Colditz et al. 1994, `metadat::dat.bcg`) and 65 head and neck cancer trials (Pignon et al. 2000, `metadat::dat.pignon2000`) | Inverse-variance and REML random effects with Hartung–Knapp, Q, I², τ², prediction interval, forest and funnel plots, leave-one-out, `rma.mv` as a mixed model, hazard ratios from O − E and V, Paule–Mandel with Knapp–Hartung as IQWiG runs it, test for subgroup differences |
 | 3. Indirect treatment comparison | 24 smoking-cessation studies (Hasselblad 1998, `netmeta::smokingcessation`) | Bucher method, network meta-analysis, league table, node splitting, and a text page on MAIC and STC |
 
-The hand calculations live in `R/hta_methods.R`. The chapters and `tests/testthat/test-hta-*.R` both use them. This part is self-study on public data and is not part of any regulatory or HTA submission.
+The hand calculations live in `R/hta_methods.R`. The chapters and `tests/testthat/test-hta-*.R` both use them. `R/hta_subgroups.R` returns the subgroup table and forest plot for any ADTTE parameter in one call. `R/hta_ae_tte.R` derives time to first event for each standard adverse-event set with `{admiral}`. Statements about IQWiG's methods quote its General Methods, version 7.0 of 19 September 2023, with section numbers. This part is self-study on public data and is not part of any regulatory or HTA submission.
 
 ## Layout
 
@@ -106,7 +108,7 @@ programs/95_compare_pilot.R    comparison with the published pilot ADaM
 reports/adascog_ancova.qmd     Quarto report: primary efficacy ANCOVA
 hta/                           Quarto website: From ADaM to an HTA dossier
 site/                          landing page and the script that assembles the Pages site
-R/                             shared functions (baseline rule, pinned downloads, HTA hand calculations)
+R/                             shared functions (baseline rule, pinned downloads, HTA hand calculations, subgroup function, AE-set time to event)
 metadata/                      specification, codelists, windows, explained differences
 tests/testthat/                tests
 python/                        independent checks
@@ -140,4 +142,4 @@ MIT. Source data belong to `{pharmaversesdtm}` and the CDISC pilot project (via 
 
 ## How it was made
 
-The HTA part (`hta/`, `R/hta_methods.R` and `tests/testthat/test-hta-*.R`) was written with the help of Claude Code, an AI coding assistant. I set the scope and reviewed the code and text. The evidence that the numbers are right is the test suite: every hand calculation is checked against an established R package.
+The whole repository was built with the help of Claude Code, an AI coding assistant. That covers the ADaM programs, the transport files and define.xml, the checks in R and Python, the efficacy report and the HTA part. I set the scope and reviewed the code and text. The evidence that the numbers are right lies in the repository itself: the variable-by-variable comparison with the published pilot ADaM datasets, the independent Python re-derivation, the ADaM conformance checks, and the test suite, where every hand calculation is checked against an established R package.

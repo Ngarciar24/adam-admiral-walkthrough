@@ -1,0 +1,273 @@
+---
+title: "1c. Parametric survival and extrapolation"
+subtitle: "Choosing a survival model when the curve must be extended beyond the trial"
+---
+
+<!--
+Program    : hta/01c-parametric-survival.qmd
+Study      : German Breast Cancer Study Group, 686 patients with node-positive
+             breast cancer (flexsurv::bc, Sauerbrei and Royston 1999)
+Purpose    : Fit the standard parametric survival models, compare their fit,
+             extrapolate beyond the end of follow-up, and check the
+             extrapolations against data that the models did not see
+Inputs     : flexsurv::bc (installed package data, no download)
+             R/hta_methods.R (hand calculations)
+Outputs    : hta/_site/01c-parametric-survival.html
+Author     : Ignacio Garcia Ribelles
+Created    : 2026-11-25
+Change log : 2026-11-25  IGR  Initial version
+Notes      : The data are cut at 3 years to imitate a trial that has just
+             ended. The full follow-up, up to 7.3 years, then shows how good
+             each extrapolation was. Time in years. Outcome: recurrence-free
+             survival. tests/testthat/test-hta-parametric.R checks every
+             hand calculation.
+-->
+
+```{r setup}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(survival)
+library(flexsurv)
+
+source("R/hta_methods.R")
+
+fmt <- function(x, d = 3) formatC(x, format = "f", digits = d)
+est <- function(fit) setNames(fit$res[, "est"], rownames(fit$res))
+
+cut_year <- 3
+bc <- flexsurv::bc %>%
+  mutate(time3  = pmin(recyrs, cut_year),
+         event3 = as.integer(censrec == 1 & recyrs <= cut_year))
+stopifnot(nrow(bc) == 686, sum(bc$censrec) == 299)
+
+dists <- c(exp = "Exponential", weibull = "Weibull", gompertz = "Gompertz",
+           llogis = "Log-logistic", lnorm = "Log-normal", gengamma = "Generalised gamma")
+model_colours <- c("#0072B2", "#E69F00", "#009E73", "#CC79A7", "#D55E00", "#56B4E9")
+names(model_colours) <- dists
+```
+
+## Why an HTA needs more than the trial
+
+A cost-effectiveness model needs the mean survival of patients over their
+lifetime. That is the area under the whole survival curve. A trial stops long
+before everyone has had the event, so the Kaplan-Meier curve ends early. The
+restricted mean survival time of chapter 1 uses only the observed part.
+Extrapolation means fitting a parametric model to the observed data and using
+it to extend the curve.
+
+Models that fit the trial equally well can extend it very differently, and
+the choice can change the cost per quality-adjusted life year more than any
+other assumption. The NICE Decision Support Unit therefore set out a
+systematic process for model choice in Technical Support Document 14 (last
+updated March 2013). Technical Support Document 21 (updated March 2022)
+covers more flexible models for complex hazards. Extrapolation matters most
+where cost-effectiveness is assessed, as at NICE. A benefit assessment such
+as the German one compares effects within the observed data.
+
+## The data and the exercise
+
+The German Breast Cancer Study Group data hold `r nrow(bc)` patients with
+node-positive breast cancer, followed for up to `r fmt(max(bc$recyrs), 1)`
+years. The outcome is recurrence-free survival, with `r sum(bc$censrec)`
+events. Patients are split into three prognostic groups from a published
+model. Source: Sauerbrei W, Royston P. Building multivariable prognostic
+and diagnostic models: transformation of the predictors by using fractional
+polynomials. *Journal of the Royal Statistical Society, Series A* 1999,
+162, 71-94. The data ship with `{flexsurv}`.
+
+The exercise imitates a trial that has just ended. All follow-up is cut at
+`r cut_year` years, which leaves `r sum(bc$event3)` events. The models see
+only these data. The later follow-up, which a real assessment would not have,
+then shows how good each extrapolation was.
+
+## Step 1. Look at the hazard before choosing a model
+
+The log of the cumulative hazard against log time is a useful first plot. A
+straight line suggests a Weibull model, which includes the exponential as a
+straight line of slope 1. Parallel lines for different groups suggest
+proportional hazards between them.
+
+```{r loglog, fig.height = 4}
+km_groups <- survfit(Surv(time3, event3) ~ group, data = bc)
+broom::tidy(km_groups) %>%
+  filter(estimate > 0, estimate < 1) %>%
+  mutate(group = sub("^group=", "", strata)) %>%
+  ggplot(aes(log(time), log(-log(estimate)), colour = group)) +
+  geom_step(linewidth = 0.8) +
+  scale_colour_manual(values = c(Good = "#009E73", Medium = "#E69F00", Poor = "#D55E00")) +
+  labs(x = "log(years)", y = "log(cumulative hazard)", colour = "Prognostic group") +
+  theme_minimal(base_size = 11) +
+  theme(legend.position = "top")
+```
+
+The curves are roughly straight and parallel. A Weibull model, or a model
+with proportional hazards between groups, is plausible within 3 years. The
+plot cannot say what happens after 3 years.
+
+## Step 2. Fit the standard models
+
+Six standard models are fitted to the 3-year data, for all patients
+together. The Akaike and Bayesian information criteria (AIC, BIC) compare
+their fit to the observed data, with a penalty for each extra parameter.
+Lower is better. The code computes each log-likelihood by hand from the
+survival and density functions, at the fitted parameters, and compares it
+with `{flexsurv}`.
+
+```{r fits}
+fits <- lapply(names(dists), function(x)
+  flexsurvreg(Surv(time3, event3) ~ 1, data = bc, dist = x))
+names(fits) <- names(dists)
+
+fit_tab <- bind_rows(lapply(names(dists), function(x) {
+  f  <- fits[[x]]
+  ll <- if (x == "gengamma") NA else param_loglik_hand(x, bc$time3, bc$event3, est(f))
+  data.frame(Model = dists[[x]], Parameters = length(est(f)),
+             `Log-likelihood` = round(f$loglik, 2),
+             `Hand - flexsurv` = if (is.na(ll)) "" else sprintf("%.1e", ll - f$loglik),
+             AIC = round(AIC(f), 1), BIC = round(BIC(f), 1), check.names = FALSE)
+}))
+fit_tab %>% arrange(AIC)
+```
+
+The generalised gamma fits best by AIC and BIC, then the log-normal and the
+log-logistic. The exponential, with a constant hazard, fits worst. The hand
+check is left blank for the generalised gamma, whose density is more
+involved.
+
+## Step 3. Extrapolate and compare with what happened next
+
+The plot shows the Kaplan-Meier curve of the full data, including the years
+the models did not see, and each model's curve extended to 10 years.
+
+```{r extrapolation, fig.height = 5.5}
+grid <- seq(0.01, 10, by = 0.01)
+curves <- bind_rows(lapply(names(dists), function(x) {
+  s <- summary(fits[[x]], t = grid, type = "survival", ci = FALSE)[[1]]
+  data.frame(model = dists[[x]], time = s$time, surv = s$est)
+})) %>% mutate(model = factor(model, levels = dists))
+
+km_full <- survfit(Surv(recyrs, censrec) ~ 1, data = bc)
+km_dat  <- data.frame(time = c(0, km_full$time), surv = c(1, km_full$surv))
+
+ggplot() +
+  annotate("rect", xmin = cut_year, xmax = Inf, ymin = -Inf, ymax = Inf,
+           fill = "grey92") +
+  geom_step(data = km_dat, aes(time, surv), linewidth = 1, colour = "black") +
+  geom_line(data = curves, aes(time, surv, colour = model), linewidth = 0.7) +
+  geom_vline(xintercept = cut_year, linetype = "dashed") +
+  scale_colour_manual(values = model_colours) +
+  scale_y_continuous(limits = c(0, 1), labels = scales::percent) +
+  scale_x_continuous(breaks = 0:10) +
+  labs(x = "Years", y = "Recurrence-free survival", colour = NULL,
+       caption = paste("Black: Kaplan-Meier of the full data. Models fitted to the",
+                       "first 3 years only. Shaded: data the models did not see.")) +
+  theme_minimal(base_size = 11) +
+  theme(legend.position = "top", plot.caption = element_text(hjust = 0, colour = "grey40"))
+```
+
+```{r validation}
+obs <- summary(km_full, times = c(3, 5, 7))
+rmst7_km <- unname(summary(km_full, rmean = 7)$table["rmean"])
+
+val_tab <- bind_rows(lapply(names(dists), function(x) {
+  f  <- fits[[x]]
+  sv <- summary(f, t = c(3, 5, 7), type = "survival", ci = FALSE)[[1]]$est
+  data.frame(Model = dists[[x]], AIC = sprintf("%.1f", AIC(f)),
+             `S(3 years)` = fmt(sv[1]), `S(5 years)` = fmt(sv[2]), `S(7 years)` = fmt(sv[3]),
+             `RMST to 7 years` = fmt(summary(f, t = 7, type = "rmst", ci = FALSE)[[1]]$est, 2),
+             `Mean to 15 years` = fmt(summary(f, t = 15, type = "rmst", ci = FALSE)[[1]]$est, 2),
+             check.names = FALSE)
+}))
+bind_rows(
+  data.frame(Model = "Observed (Kaplan-Meier, full data)", AIC = "",
+             `S(3 years)` = fmt(obs$surv[1]), `S(5 years)` = fmt(obs$surv[2]),
+             `S(7 years)` = fmt(obs$surv[3]), `RMST to 7 years` = fmt(rmst7_km, 2),
+             `Mean to 15 years` = "not observable", check.names = FALSE),
+  val_tab
+)
+```
+
+At 3 years every model agrees with the data, within about two percentage
+points. At 7 years the predictions range from
+`r fmt(min(as.numeric(val_tab[["S(7 years)"]])))` to
+`r fmt(max(as.numeric(val_tab[["S(7 years)"]])))`, against an observed
+`r fmt(obs$surv[3])`. The mean recurrence-free time over 15 years, the
+quantity a cost-effectiveness model would use, ranges from
+`r fmt(min(as.numeric(val_tab[["Mean to 15 years"]])), 2)` to
+`r fmt(max(as.numeric(val_tab[["Mean to 15 years"]])), 2)` years.
+
+Three lessons follow. First, the model with the best AIC is not the best
+extrapolation here: the generalised gamma overestimates survival from year
+5 on. AIC measures fit to the data the model has seen, not to the future.
+Second, the exponential, which fits the first year worst, comes closest to
+the observed curve after year 4, because the observed hazard levels off.
+Third, the Gompertz and Weibull models, with hazards that keep rising,
+predict far too many late events. The differences lie almost entirely in
+the years nobody observed, and the observed tail itself rests on few
+patients after year 6.
+
+## Step 4. Look at the hazards the models assume
+
+The extrapolated curves differ because the models assume different shapes of
+hazard over time. Plotting the hazards makes the assumptions visible, so they
+can be judged against clinical knowledge.
+
+```{r hazards, fig.height = 4.5}
+hz <- bind_rows(lapply(names(dists), function(x) {
+  s <- summary(fits[[x]], t = grid, type = "hazard", ci = FALSE)[[1]]
+  data.frame(model = dists[[x]], time = s$time, hazard = s$est)
+})) %>% mutate(model = factor(model, levels = dists))
+
+ggplot(hz, aes(time, hazard, colour = model)) +
+  annotate("rect", xmin = cut_year, xmax = Inf, ymin = -Inf, ymax = Inf, fill = "grey92") +
+  geom_line(linewidth = 0.7) +
+  geom_vline(xintercept = cut_year, linetype = "dashed") +
+  scale_colour_manual(values = model_colours) +
+  scale_x_continuous(breaks = 0:10) +
+  coord_cartesian(ylim = c(0, 0.5)) +
+  labs(x = "Years", y = "Hazard of recurrence or death per year", colour = NULL) +
+  theme_minimal(base_size = 11) +
+  theme(legend.position = "top")
+```
+
+The Weibull and Gompertz hazards rise without limit. The log-normal,
+log-logistic and generalised gamma hazards rise and then fall. For
+recurrence after breast cancer surgery, a hazard that peaks in the first
+years and then declines is the more plausible shape. That clinical argument,
+not AIC alone, would decide the base case.
+
+## What a submission would do
+
+The usual process, as set out in TSD 14, runs as follows.
+
+1. Check proportional hazards between the arms, for example with the
+   log-cumulative hazard plot. If they hold, a model with treatment as a
+   covariate is possible. If not, fit each arm separately.
+2. Fit the standard models: exponential, Weibull, Gompertz, log-logistic,
+   log-normal and generalised gamma.
+3. Compare their fit to the observed data with AIC and BIC, and by eye.
+4. Judge the extrapolated part for clinical plausibility, using external
+   data such as registries or longer trials, and clinical opinion.
+5. Choose a base case and report plausible alternatives as scenario
+   analyses.
+
+When no standard model captures the hazard, TSD 21 describes more flexible
+options: spline models, piecewise models, cure models and mixture models.
+They fit the observed data better but do not remove the need to justify the
+extrapolated part.
+
+## References
+
+- German Breast Cancer Study Group data: Sauerbrei W, Royston P.
+  *Journal of the Royal Statistical Society, Series A* 1999, 162, 71-94.
+  As used in Royston P, Parmar MKB. Flexible parametric
+  proportional-hazards and proportional-odds models for censored survival
+  data. *Statistics in Medicine* 2002, 21, 2175-2197.
+- NICE Decision Support Unit. Technical Support Document 14: Survival
+  analysis for economic evaluations alongside clinical trials,
+  extrapolation with patient-level data. Last updated March 2013.
+- NICE Decision Support Unit. Technical Support Document 21: Flexible
+  methods for survival analysis. Updated March 2022.
+- Jackson C. flexsurv: a platform for parametric survival modeling in R.
+  *Journal of Statistical Software* 2016, 70(8), 1-33.
