@@ -10,6 +10,8 @@ Purpose    : Plain-language definitions of the HTA terms used in the
 Author     : Ignacio Garcia Ribelles
 Created    : 2026-11-24
 Change log : 2026-11-24  IGR  Initial version
+             2026-11-25  IGR  Patient-reported outcomes and survival
+                              extrapolation terms
 -->
 
 **PICO.**
@@ -69,3 +71,41 @@ A precise statement of the treatment effect a study targets: population,
 treatments, endpoint, handling of intercurrent events and population-level
 summary (ICH E9(R1)). It fixes what question a number answers before anyone
 chooses how to estimate it.
+
+## Patient-reported outcomes and survival extrapolation
+
+**Patient-reported outcome (PRO).**
+A report of the patient's health that comes directly from the patient,
+without interpretation by a clinician or anyone else, for example a pain
+score or a quality-of-life questionnaire. ADAS-Cog, used on page 1b, is not
+one: a rater scores tasks that the patient performs.
+
+**Health-related quality of life.**
+How a patient's health affects their physical, mental and social
+well-being, measured with questionnaires such as the EORTC QLQ-C30 or the
+SF-36. Benefit assessments count it as a patient-relevant outcome next to
+mortality, morbidity and side effects.
+
+**Minimal important difference (MID).**
+The smallest change in a score that patients perceive as important.
+Published MIDs vary widely, so IQWiG uses a response threshold of at least
+15% of the scale range instead (General Methods 7.0, section 9.3.3).
+
+**Responder analysis.**
+The share of patients whose score changes by at least a set threshold,
+compared between arms as a risk ratio or risk difference. It turns a change
+on a scale into a statement about patients, which is easier to judge than a
+mean difference.
+
+**Health utility.**
+A value for a health state between 0 (dead) and 1 (full health), often
+derived from the EQ-5D questionnaire with a country-specific value set.
+Multiplied by time spent in the state, it gives quality-adjusted life years
+for cost-effectiveness models.
+
+**Extrapolation.**
+Extending a survival curve beyond the end of trial follow-up with a
+parametric model, so that mean survival over a lifetime can be estimated.
+Models that fit the trial equally well can extrapolate very differently,
+which page 1c shows.
+

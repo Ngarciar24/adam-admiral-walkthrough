@@ -66,6 +66,9 @@ threshold   <- 0.15 * scale_range     # 15% of the scale range: 10.5 points
 ## What IQWiG asks of a scale
 
 ADAS-Cog(11) measures cognition from 0 to 70 points. Higher scores are worse.
+A rater scores tasks that the patient performs, so it is not a
+patient-reported outcome. IQWiG's rules for responder thresholds below apply
+to scales in general.
 The endpoint is the change from baseline to Week 24, with missing values
 carried forward (LOCF), as in the primary analysis.
 
